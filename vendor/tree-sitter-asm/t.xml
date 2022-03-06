@@ -1,0 +1,118 @@
+<prog>
+  <instruction>
+    <opcode>
+      <BinaryArithmeticOpcode>sub</BinaryArithmeticOpcode>
+</opcode>
+
+    <operand>
+      <immediateOperand>$</immediateOperand>
+</operand>
+,
+    <operand>
+      <registerOperand>
+        <generalRegisterOperand>
+          <generalRegister64Bits>%rsp</generalRegister64Bits>
+</generalRegisterOperand>
+</registerOperand>
+</operand>
+</instruction>
+
+  <instruction>
+    <opcode>
+      <DataTransferOpcode>mov</DataTransferOpcode>
+</opcode>
+
+    <operand>
+      <immediateOperand>$</immediateOperand>
+</operand>
+,
+    <operand>
+      <registerOperand>
+        <generalRegisterOperand>
+          <generalRegister32Bits>%edi</generalRegister32Bits>
+</generalRegisterOperand>
+</registerOperand>
+</operand>
+</instruction>
+
+  <instruction>
+    <opcode>
+      <DataTransferOpcode>mov</DataTransferOpcode>
+</opcode>
+
+    <operand>
+      <registerOperand>
+        <generalRegisterOperand>
+          <generalRegister64Bits>%rax</generalRegister64Bits>
+</generalRegisterOperand>
+</registerOperand>
+</operand>
+,
+    <operand>
+      <memoryOperand>
+        <memoryIndirectOperand>
+          <offset>0x10</offset>
+(
+          <registerOperand>
+            <generalRegisterOperand>
+              <generalRegister64Bits>%rsp</generalRegister64Bits>
+</generalRegisterOperand>
+</registerOperand>
+)</memoryIndirectOperand>
+</memoryOperand>
+</operand>
+</instruction>
+
+  <instruction>
+    <opcode>
+      <DataTransferOpcode>mov</DataTransferOpcode>
+</opcode>
+
+    <operand>
+      <memoryOperand>
+        <memoryIndirectOperand>
+          <offset>0x10</offset>
+(
+          <registerOperand>
+            <generalRegisterOperand>
+              <generalRegister64Bits>%rsp</generalRegister64Bits>
+</generalRegisterOperand>
+</registerOperand>
+)</memoryIndirectOperand>
+</memoryOperand>
+</operand>
+,
+    <operand>
+      <registerOperand>
+        <generalRegisterOperand>
+          <generalRegister64Bits>%rax</generalRegister64Bits>
+</generalRegisterOperand>
+</registerOperand>
+</operand>
+</instruction>
+
+  <instruction>
+    <opcode>
+      <BinaryArithmeticOpcode>add</BinaryArithmeticOpcode>
+</opcode>
+
+    <operand>
+      <immediateOperand>$</immediateOperand>
+</operand>
+,
+    <operand>
+      <registerOperand>
+        <generalRegisterOperand>
+          <generalRegister64Bits>%rsp</generalRegister64Bits>
+</generalRegisterOperand>
+</registerOperand>
+</operand>
+</instruction>
+
+  <instruction>
+    <opcode>
+      <CuriousOpcode>retq</CuriousOpcode>
+</opcode>
+</instruction>
+</prog>
+

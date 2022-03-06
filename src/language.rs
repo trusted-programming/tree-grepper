@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub enum Language {
+    Asm,
     Cpp,
     Elixir,
     Elm,
@@ -18,6 +19,7 @@ pub enum Language {
 impl Language {
     pub fn all() -> Vec<Language> {
         vec![
+            Language::Asm,
             Language::Cpp,
             Language::Elixir,
             Language::Elm,
@@ -33,6 +35,7 @@ impl Language {
     pub fn language(&self) -> tree_sitter::Language {
         unsafe {
             match self {
+                Language::Asm => tree_sitter_asm(),
                 Language::Cpp => tree_sitter_cpp(),
                 Language::Elixir => tree_sitter_elixir(),
                 Language::Elm => tree_sitter_elm(),
@@ -52,6 +55,7 @@ impl Language {
 
     pub fn name_for_types_builder(&self) -> &str {
         match self {
+            Language::Asm => "asm",
             Language::Cpp => "cpp",
             Language::Elixir => "elixir",
             Language::Elm => "elm",
@@ -70,6 +74,7 @@ impl FromStr for Language {
 
     fn from_str(s: &str) -> Result<Self> {
         match s {
+            "asm" => Ok(Language::Asm),
             "cpp" => Ok(Language::Cpp),
             "elixir" => Ok(Language::Elixir),
             "elm" => Ok(Language::Elm),
@@ -95,6 +100,7 @@ impl FromStr for Language {
 impl Display for Language {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
+            Language::Asm => f.write_str("asm"),
             Language::Cpp => f.write_str("cpp"),
             Language::Elixir => f.write_str("elixir"),
             Language::Elm => f.write_str("elm"),
@@ -143,6 +149,7 @@ mod tests {
 }
 
 extern "C" {
+    fn tree_sitter_asm() -> tree_sitter::Language;
     fn tree_sitter_cpp() -> tree_sitter::Language;
     fn tree_sitter_elixir() -> tree_sitter::Language;
     fn tree_sitter_elm() -> tree_sitter::Language;
