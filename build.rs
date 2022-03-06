@@ -4,6 +4,7 @@ use std::path::PathBuf;
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
+/*
     // cpp
     let cpp_dir: PathBuf = ["vendor", "tree-sitter-cpp", "src"].iter().collect();
 
@@ -127,6 +128,7 @@ fn main() {
         .warnings(false)
         .file(ruby_dir.join("scanner.cc"))
         .compile("tree_sitter_ruby_scanner");
+    */
 
     // rust
     let rust_dir: PathBuf = ["vendor", "tree-sitter-rust", "src"].iter().collect();
@@ -145,6 +147,7 @@ fn main() {
         .file(rust_dir.join("scanner.c"))
         .compile("tree_sitter_rust_scanner");
 
+/*
     // typescript
     let typescript_dir: PathBuf = ["vendor", "tree-sitter-typescript", "typescript", "src"]
         .iter()
@@ -163,4 +166,5 @@ fn main() {
         .warnings(false)
         .file(typescript_dir.join("scanner.c"))
         .compile("tree_sitter_typescript_scanner");
+*/
 }

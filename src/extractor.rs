@@ -6,7 +6,8 @@ use std::collections::HashSet;
 use std::fmt::{self, Display};
 use std::fs;
 use std::path::{Path, PathBuf};
-use tree_sitter::{Parser, Point, Query, QueryCursor};
+use tree_sitter::{Parser, Point, Query, QueryCursor, QueryPredicateArg};
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct Extractor {
@@ -70,9 +71,32 @@ impl Extractor {
             .context(
                 "could not parse to a tree. This is an internal error and should be reported.",
             )?;
-
-        let mut cursor = QueryCursor::new();
-
+	
+        let mut to_substitute = HashMap::new();
+	for p in self.query.general_predicates(0) {
+		match &*p.operator {
+			"sub!" => {
+				let mut key: usize = 0;
+				let mut value: String = "".to_string();
+				for a in &p.args { 
+					match a {
+						QueryPredicateArg::Capture(c) => {
+							key = (1 + *c) as usize;
+						},
+						QueryPredicateArg::String(s) => {
+							value = s.to_string();
+						}
+					}
+				}
+				if key != 0 {
+					to_substitute.insert(key, value);
+				}
+			}
+			_ => {}
+		}
+	}
+        // println!("{:?}", to_substitute);
+	let mut cursor = QueryCursor::new();
         let extracted_matches = cursor
             .matches(&self.query, tree.root_node(), source)
             .flat_map(|query_match| query_match.captures)
@@ -80,11 +104,11 @@ impl Extractor {
             // microcontroller. I don't think this is a huge problem, though,
             // since even the gnarliest queries I've written have something on
             // the order of 20 matches. Nowhere close to 2^16!
-            .filter(|capture| !self.ignores.contains(&(capture.index as usize)))
+            .filter(|capture| !self.ignores.contains(&(capture.index as usize)) || to_substitute.contains_key(&((capture.index + 1) as usize)))
             .map(|capture| {
                 let name = &self.captures[capture.index as usize];
                 let node = capture.node;
-                let text = match node
+                let mut text = match node
                     .utf8_text(source)
                     .map(|unowned| unowned.to_string())
                     .context("could not extract text from capture")
@@ -92,7 +116,10 @@ impl Extractor {
                     Ok(text) => text,
                     Err(problem) => return Err(problem),
                 };
-
+		if to_substitute.contains_key(&((capture.index + 1) as usize)) {
+		    let value = to_substitute.get(&((capture.index + 1) as usize)).unwrap();
+		    text = str::replace(value, ("@".to_owned() + name).as_str(), &text);
+		}
                 Ok(ExtractedMatch {
                     kind: node.kind(),
                     name,
