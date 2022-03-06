@@ -72,10 +72,12 @@ impl Extractor {
                 "could not parse to a tree. This is an internal error and should be reported.",
             )?;
 	
+	// println!("{:?}", &self.query);
         let mut to_substitute = HashMap::new();
 	for p in self.query.general_predicates(0) {
 		match &*p.operator {
 			"sub!" => {
+				//println!("{:?}", &p);
 				let mut key: usize = 0;
 				let mut value: String = "".to_string();
 				for a in &p.args { 
@@ -91,11 +93,12 @@ impl Extractor {
 				if key != 0 {
 					to_substitute.insert(key, value);
 				}
-			}
+			},
 			_ => {}
 		}
 	}
-        // println!("{:?}", to_substitute);
+        //println!("{:?}", to_substitute);
+        let mut name_to_key = HashMap::new();
 	let mut cursor = QueryCursor::new();
         let extracted_matches = cursor
             .matches(&self.query, tree.root_node(), source)
@@ -104,22 +107,18 @@ impl Extractor {
             // microcontroller. I don't think this is a huge problem, though,
             // since even the gnarliest queries I've written have something on
             // the order of 20 matches. Nowhere close to 2^16!
-            .filter(|capture| !self.ignores.contains(&(capture.index as usize)) || to_substitute.contains_key(&((capture.index + 1) as usize)))
             .map(|capture| {
                 let name = &self.captures[capture.index as usize];
+		name_to_key.insert(name.to_string(), (capture.index +1) as usize);
                 let node = capture.node;
-                let mut text = match node
+                let text = match node
                     .utf8_text(source)
                     .map(|unowned| unowned.to_string())
                     .context("could not extract text from capture")
                 {
-                    Ok(text) => text,
+                    Ok(text) => { text },
                     Err(problem) => return Err(problem),
                 };
-		if to_substitute.contains_key(&((capture.index + 1) as usize)) {
-		    let value = to_substitute.get(&((capture.index + 1) as usize)).unwrap();
-		    text = str::replace(value, ("@".to_owned() + name).as_str(), &text);
-		}
                 Ok(ExtractedMatch {
                     kind: node.kind(),
                     name,
@@ -133,10 +132,33 @@ impl Extractor {
         if extracted_matches.is_empty() {
             Ok(None)
         } else {
+	    let mut extracted_matches2 = Vec::<ExtractedMatch>::new();
+	    for m in &extracted_matches {
+		let k = name_to_key.get(&m.name.to_string()).unwrap();
+		let mut text = String::from(&m.text);
+		if to_substitute.contains_key(k) {
+			text = to_substitute.get(k).unwrap().to_string();
+			for m1 in &extracted_matches {
+			    let from_str = String::from("@") + m1.name;
+			    let from = from_str.as_str();
+			    let to = m1.text.as_str();
+			    text = text.replace(from, to);
+			}
+		}
+		if ! self.ignores.contains(&(k-1 as usize)) {
+			extracted_matches2.push(ExtractedMatch {
+			   kind: m.kind,
+			   name: m.name,
+			   text: text,
+			   start: m.start,
+			   end: m.end,
+			});
+		}
+            }
             Ok(Some(ExtractedFile {
                 file: path.map(|p| p.to_owned()),
                 file_type: self.language.to_string(),
-                matches: extracted_matches,
+                matches: extracted_matches2,
             }))
         }
     }

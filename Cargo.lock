@@ -556,6 +556,7 @@ dependencies = [
  "insta",
  "itertools",
  "rayon",
+ "regex",
  "serde",
  "serde_json",
  "tree-sitter",
