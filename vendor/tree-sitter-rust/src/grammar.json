@@ -877,6 +877,18 @@
         {
           "type": "STRING",
           "value": "while"
+        },
+        {
+          "type": "STRING",
+          "value": "SAFENESS"
+        },
+        {
+          "type": "STRING",
+          "value": "OWNERSHIP"
+        },
+        {
+          "type": "STRING",
+          "value": "LIFETIME"
         }
       ]
     },
@@ -2084,16 +2096,20 @@
           ]
         },
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "SYMBOL",
-              "name": "function_modifiers"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
+          "type": "FIELD",
+          "name": "function_modifiers",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "SYMBOL",
+                "name": "function_modifiers"
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          }
         },
         {
           "type": "STRING",
@@ -2302,6 +2318,15 @@
         }
       ]
     },
+    "safeness": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "unsafe"
+        }
+      ]
+    },
     "function_modifiers": {
       "type": "REPEAT1",
       "content": {
@@ -2320,8 +2345,8 @@
             "value": "const"
           },
           {
-            "type": "STRING",
-            "value": "unsafe"
+            "type": "SYMBOL",
+            "name": "safeness"
           },
           {
             "type": "SYMBOL",
@@ -2508,15 +2533,15 @@
         }
       ]
     },
-    "impl_item": {
+    "safe_impl": {
       "type": "SEQ",
       "members": [
         {
           "type": "CHOICE",
           "members": [
             {
-              "type": "STRING",
-              "value": "unsafe"
+              "type": "SYMBOL",
+              "name": "safeness"
             },
             {
               "type": "BLANK"
@@ -2526,6 +2551,19 @@
         {
           "type": "STRING",
           "value": "impl"
+        }
+      ]
+    },
+    "impl_item": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "FIELD",
+          "name": "safeness",
+          "content": {
+            "type": "SYMBOL",
+            "name": "safe_impl"
+          }
         },
         {
           "type": "FIELD",
@@ -2620,6 +2658,27 @@
         }
       ]
     },
+    "safe_trait": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "CHOICE",
+          "members": [
+            {
+              "type": "SYMBOL",
+              "name": "safeness"
+            },
+            {
+              "type": "BLANK"
+            }
+          ]
+        },
+        {
+          "type": "STRING",
+          "value": "trait"
+        }
+      ]
+    },
     "trait_item": {
       "type": "SEQ",
       "members": [
@@ -2636,20 +2695,12 @@
           ]
         },
         {
-          "type": "CHOICE",
-          "members": [
-            {
-              "type": "STRING",
-              "value": "unsafe"
-            },
-            {
-              "type": "BLANK"
-            }
-          ]
-        },
-        {
-          "type": "STRING",
-          "value": "trait"
+          "type": "FIELD",
+          "name": "safeness",
+          "content": {
+            "type": "SYMBOL",
+            "name": "safe_trait"
+          }
         },
         {
           "type": "FIELD",
@@ -7123,8 +7174,8 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "STRING",
-          "value": "unsafe"
+          "type": "SYMBOL",
+          "name": "safeness"
         },
         {
           "type": "SYMBOL",

@@ -197,7 +197,7 @@ module.exports = grammar({
       '\'',
       'as', 'async', 'await', 'break', 'const', 'continue', 'default', 'enum', 'fn', 'for', 'if', 'impl',
       'let', 'loop', 'match', 'mod', 'pub', 'return', 'static', 'struct', 'trait', 'type',
-      'union', 'unsafe', 'use', 'where', 'while'
+      'union', 'unsafe', 'use', 'where', 'while', 'SAFENESS', 'OWNERSHIP', 'LIFETIME'
     ),
 
     // Section - Declarations
@@ -399,7 +399,7 @@ module.exports = grammar({
 
     function_item: $ => seq(
       optional($.visibility_modifier),
-      optional($.function_modifiers),
+      field('function_modifiers', optional($.function_modifiers)),
       'fn',
       field('name', choice($.identifier, $.metavariable)),
       field('type_parameters', optional($.type_parameters)),
@@ -421,11 +421,17 @@ module.exports = grammar({
       ';'
     ),
 
+    safeness: $ => seq(
+      // optional('safeness'), 
+      'unsafe'
+    ),
+
     function_modifiers: $ => repeat1(choice(
       'async',
       'default',
       'const',
-      'unsafe',
+      // field('safeness', $.safeness), 
+      $.safeness, 
       $.extern_modifier
     )),
 
@@ -449,10 +455,12 @@ module.exports = grammar({
       )),
       field('bounds', $.trait_bounds)
     ),
-
+    safe_impl: $ => seq(
+      optional($.safeness),
+      'impl'
+    ),
     impl_item: $ => seq(
-      optional('unsafe'),
-      'impl',
+      field('safeness', $.safe_impl),
       field('type_parameters', optional($.type_parameters)),
       optional(seq(
         field('trait', choice(
@@ -466,11 +474,13 @@ module.exports = grammar({
       optional($.where_clause),
       choice(field('body', $.declaration_list), ';')
     ),
-
+    safe_trait: $ => seq(
+      optional($.safeness),
+      'trait',
+    ),
     trait_item: $ => seq(
       optional($.visibility_modifier),
-      optional('unsafe'),
-      'trait',
+      field('safeness', $.safe_trait),
       field('name', $._type_identifier),
       field('type_parameters', optional($.type_parameters)),
       field('bounds', optional($.trait_bounds)),
@@ -1227,7 +1237,7 @@ module.exports = grammar({
     )),
 
     unsafe_block: $ => seq(
-      'unsafe',
+      $.safeness,
       $.block
     ),
 
