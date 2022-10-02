@@ -3,6 +3,17 @@
 Works like `grep`, but uses `tree-sitter` to search for structure instead of strings.
 [Here's a longer introduction to the tool as a blog post](https://bytes.zone/posts/tree-grepper/).
 
+## Update
+
+```bash
+cd vendor/tree-sitter-rust
+tree-sitter generate
+tree-sitter parse ../../examples/error.rs
+cd ../..
+cargo build
+./mask.sh examples/error.rs
+```
+
 ## Installing
 
 Use [`nix`](https://nixos.org/download.html) to install:
