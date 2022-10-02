@@ -422,7 +422,6 @@ module.exports = grammar({
     ),
 
     safeness: $ => seq(
-      // optional('safeness'), 
       'unsafe'
     ),
 
@@ -430,7 +429,6 @@ module.exports = grammar({
       'async',
       'default',
       'const',
-      // field('safeness', $.safeness), 
       $.safeness, 
       $.extern_modifier
     )),
@@ -702,7 +700,7 @@ module.exports = grammar({
       field('alias', $._type)
     ),
 
-    lifetime: $ => seq("'", $.identifier),
+    lifetime: $ => field('lifetime', seq("'", $.identifier)),
 
     array_type: $ => seq(
       '[',
@@ -730,10 +728,10 @@ module.exports = grammar({
             $._type_identifier,
             $.scoped_type_identifier
           )),
-          seq(
+          field('safeness', seq(
             optional($.function_modifiers),
             'fn'
-          )
+          ))
         ),
         field('parameters', $.parameters)
       )),

@@ -6,7 +6,7 @@ use std::collections::HashSet;
 use std::fmt::{self, Display};
 use std::fs;
 use std::path::{Path, PathBuf};
-use tree_sitter::{Parser, Point, Query, QueryCursor, QueryPredicateArg};
+use tree_sitter::{Parser, Point, Query, QueryCursor, QueryPredicateArg, InputEdit};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -62,7 +62,7 @@ impl Extractor {
             .set_language(self.ts_language)
             .context("could not set language")?;
 
-        let tree = parser
+        let mut tree = parser
             .parse(&source, None)
             // note: this could be a timeout or cancellation, but we don't set
             // that so we know it's always a language error. Buuuut we also
@@ -74,6 +74,7 @@ impl Extractor {
 	
 	// println!("{:?}", &self.query);
         let mut to_substitute = HashMap::new();
+        let mut to_insert = HashMap::new();
 	for p in self.query.general_predicates(0) {
 		match &*p.operator {
 			"sub!" => {
@@ -94,10 +95,29 @@ impl Extractor {
 					to_substitute.insert(key, value);
 				}
 			},
+			"insert_field!" => {
+				//println!("{:?}", &p);
+				let mut key: usize = 0;
+				let mut value: String = "".to_string();
+				for a in &p.args { 
+					match a {
+						QueryPredicateArg::Capture(c) => {
+							key = (1 + *c) as usize;
+						},
+						QueryPredicateArg::String(s) => {
+							value = s.to_string();
+						}
+					}
+				}
+				if key != 0 {
+					to_insert.insert(key, value);
+				}
+                        },
 			_ => {}
 		}
 	}
         //println!("{:?}", to_substitute);
+        //println!("{:?}", to_insert);
         let mut name_to_key = HashMap::new();
 	let mut cursor = QueryCursor::new();
         let extracted_matches = cursor
@@ -123,6 +143,8 @@ impl Extractor {
                     kind: node.kind(),
                     name,
                     text,
+                    start_byte: node.start_byte(),
+                    end_byte: node.end_byte(),
                     start: node.start_position(),
                     end: node.end_position(),
                 })
@@ -145,11 +167,50 @@ impl Extractor {
 			    text = text.replace(from, to);
 			}
 		}
+		if to_insert.contains_key(k) {
+			text = to_insert.get(k).unwrap().to_string();
+            let s = String::from(&text);
+            let ss: Vec<&str> = s.split(" ").collect();
+            let field_name = ss[0];
+            let field_value = ss[1];
+			for m1 in &extracted_matches {
+                if m1.name == field_name  {
+                    let input_edit = {
+                        let start_byte = m1.start_byte;
+                        let old_end_byte = m1.end_byte;
+                        let new_end_byte = old_end_byte + field_value.len();
+                        let start_position = m1.start;
+                        let old_end_position = m1.end;
+                        let new_end_position = Point::new(old_end_position.row, old_end_position.column + field_value.len());
+                        InputEdit {
+                            start_byte,
+                            old_end_byte,
+                            new_end_byte,
+                            start_position,
+                            old_end_position,
+                            new_end_position,
+                        }
+                    };
+                    tree.edit(&input_edit);
+                    let mut new_source = source.to_vec();
+                    new_source.splice(m1.start_byte .. m1.start_byte, field_value.as_bytes().iter().cloned());
+                    tree = parser.parse(&new_source, Some(&tree)).context(
+                        "could not reparse to a tree. This is an internal error and should be reported.",
+                    )?;    
+                }
+			    let from_str = String::from("@") + m1.name;
+			    let from = from_str.as_str();
+			    let to = m1.text.as_str();
+			    text = text.replace(from, to);
+            }
+		}
 		if ! self.ignores.contains(&(k-1 as usize)) {
 			extracted_matches2.push(ExtractedMatch {
 			   kind: m.kind,
 			   name: m.name,
 			   text: text,
+               start_byte: m.start_byte,
+               end_byte: m.end_byte,
 			   start: m.start,
 			   end: m.end,
 			});
@@ -186,10 +247,14 @@ impl<'query> Display for ExtractedFile<'query> {
         for extraction in &self.matches {
             writeln!(
                 f,
-                "{}:{}:{}:{}:{}",
+                "{}:{}:{}:{}:{}:{}:{}:{}:{}",
                 filename,
+                extraction.start_byte,
                 extraction.start.row + 1,
                 extraction.start.column + 1,
+                extraction.end_byte,
+                extraction.end.row + 1,
+                extraction.end.column + 1,
                 extraction.name,
                 extraction.text
             )?
@@ -204,6 +269,8 @@ pub struct ExtractedMatch<'query> {
     kind: &'static str,
     name: &'query str,
     text: String,
+    start_byte: usize,
+    end_byte: usize,
     #[serde(serialize_with = "serialize_point")]
     start: Point,
     #[serde(serialize_with = "serialize_point")]
