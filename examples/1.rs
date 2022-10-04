@@ -1,3 +1,1 @@
-let mut i: libc::c_int = 1 as libc::c_int;
-while i < n {
-}
+pub fn insertion_sort(n: i32, p: *mut i32);

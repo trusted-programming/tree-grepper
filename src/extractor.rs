@@ -2,13 +2,13 @@ use crate::language::Language;
 use anyhow::{Context, Result};
 use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fmt::{self, Display};
 use std::fs;
 use std::path::{Path, PathBuf};
-use tree_sitter::{Parser, Point, Query, QueryCursor, QueryPredicateArg, InputEdit};
-use std::collections::HashMap;
-
+use tree_sitter::{InputEdit, Parser, Point, Query, QueryCursor, QueryPredicateArg};
+// use tree_sitter::{Parser, Point, Query, QueryPredicateArg};
 #[derive(Debug)]
 pub struct Extractor {
     language: Language,
@@ -48,7 +48,6 @@ impl Extractor {
         parser: &mut Parser,
     ) -> Result<Option<ExtractedFile>> {
         let source = fs::read(&path).context("could not read file")?;
-
         self.extract_from_text(Some(path), &source, parser)
     }
 
@@ -64,79 +63,48 @@ impl Extractor {
 
         let mut tree = parser
             .parse(&source, None)
-            // note: this could be a timeout or cancellation, but we don't set
-            // that so we know it's always a language error. Buuuut we also
-            // always set the language above so if this happens we also know
-            // it's an internal error.
             .context(
                 "could not parse to a tree. This is an internal error and should be reported.",
             )?;
-	
-	// println!("{:?}", &self.query);
         let mut to_substitute = HashMap::new();
-        let mut to_insert = HashMap::new();
-	for p in self.query.general_predicates(0) {
-		match &*p.operator {
-			"sub!" => {
-				//println!("{:?}", &p);
-				let mut key: usize = 0;
-				let mut value: String = "".to_string();
-				for a in &p.args { 
-					match a {
-						QueryPredicateArg::Capture(c) => {
-							key = (1 + *c) as usize;
-						},
-						QueryPredicateArg::String(s) => {
-							value = s.to_string();
-						}
-					}
-				}
-				if key != 0 {
-					to_substitute.insert(key, value);
-				}
-			},
-			"insert_field!" => {
-				//println!("{:?}", &p);
-				let mut key: usize = 0;
-				let mut value: String = "".to_string();
-				for a in &p.args { 
-					match a {
-						QueryPredicateArg::Capture(c) => {
-							key = (1 + *c) as usize;
-						},
-						QueryPredicateArg::String(s) => {
-							value = s.to_string();
-						}
-					}
-				}
-				if key != 0 {
-					to_insert.insert(key, value);
-				}
-                        },
-			_ => {}
-		}
-	}
-        //println!("{:?}", to_substitute);
-        //println!("{:?}", to_insert);
+        let mut key: usize = 0;
+        let source_text = String::from_utf8_lossy(source).to_string();
+        for p in self.query.general_predicates(0) {
+            match &*p.operator {
+                "sub!" => {
+                    let mut value: String = "".to_string();
+                    for a in &p.args {
+                        match a {
+                            QueryPredicateArg::Capture(c) => {
+                                key = (1 + *c) as usize;
+                            }
+                            QueryPredicateArg::String(s) => {
+                                value = s.to_string();
+                            }
+                        }
+                    }
+                    if key != 0 {
+                        to_substitute.insert(key, value);
+                    }
+                }
+                _ => {}
+            }
+        }
         let mut name_to_key = HashMap::new();
-	let mut cursor = QueryCursor::new();
-        let extracted_matches = cursor
+        let mut cursor = QueryCursor::new();
+        let mut extracted_matches = cursor
             .matches(&self.query, tree.root_node(), source)
             .flat_map(|query_match| query_match.captures)
-            // note: the casts here could potentially break if run on a 16-bit
-            // microcontroller. I don't think this is a huge problem, though,
-            // since even the gnarliest queries I've written have something on
-            // the order of 20 matches. Nowhere close to 2^16!
             .map(|capture| {
                 let name = &self.captures[capture.index as usize];
-		name_to_key.insert(name.to_string(), (capture.index +1) as usize);
+                name_to_key.insert(name.to_string(), (capture.index + 1) as usize);
                 let node = capture.node;
                 let text = match node
                     .utf8_text(source)
                     .map(|unowned| unowned.to_string())
                     .context("could not extract text from capture")
                 {
-                    Ok(text) => { text },
+                    Ok(text) => text,
                     Err(problem) => return Err(problem),
                 };
                 Ok(ExtractedMatch {
@@ -151,77 +119,76 @@ impl Extractor {
             })
             .collect::<Result<Vec<ExtractedMatch>>>()?;
 
-        if extracted_matches.is_empty() {
-            Ok(None)
-        } else {
-	    let mut extracted_matches2 = Vec::<ExtractedMatch>::new();
-	    for m in &extracted_matches {
-		let k = name_to_key.get(&m.name.to_string()).unwrap();
-		let mut text = String::from(&m.text);
-		if to_substitute.contains_key(k) {
-			text = to_substitute.get(k).unwrap().to_string();
-			for m1 in &extracted_matches {
-			    let from_str = String::from("@") + m1.name;
-			    let from = from_str.as_str();
-			    let to = m1.text.as_str();
-			    text = text.replace(from, to);
-			}
-		}
-		if to_insert.contains_key(k) {
-			text = to_insert.get(k).unwrap().to_string();
-            let s = String::from(&text);
-            let ss: Vec<&str> = s.split(" ").collect();
-            let field_name = ss[0];
-            let field_value = ss[1];
-			for m1 in &extracted_matches {
-                if m1.name == field_name  {
-                    let input_edit = {
-                        let start_byte = m1.start_byte;
-                        let old_end_byte = m1.end_byte;
-                        let new_end_byte = old_end_byte + field_value.len();
-                        let start_position = m1.start;
-                        let old_end_position = m1.end;
-                        let new_end_position = Point::new(old_end_position.row, old_end_position.column + field_value.len());
-                        InputEdit {
-                            start_byte,
-                            old_end_byte,
-                            new_end_byte,
-                            start_position,
-                            old_end_position,
-                            new_end_position,
+        let mut has_changed = false;
+        let mut new_source = source.to_vec();
+        let mut extracted_matches2 = Vec::<ExtractedMatch>::new();
+        // let root: usize = 0;
+        loop {
+            for m in &extracted_matches {
+                let k = name_to_key.get(&m.name.to_string()).unwrap();
+                let mut text = String::from(&m.text);
+                let old_text = text.clone();
+                if to_substitute.contains_key(k) {
+                    text = to_substitute.get(k).unwrap().to_string();
+                    for m1 in &extracted_matches {
+                        let from_str = String::from("@") + m1.name;
+                        let from = from_str.as_str();
+                        let to = m1.text.as_str();
+                        text = text.replace(from, to);
+                        if ! text.contains("@") {
+                            break;
                         }
-                    };
-                    tree.edit(&input_edit);
-                    let mut new_source = source.to_vec();
-                    new_source.splice(m1.start_byte .. m1.start_byte, field_value.as_bytes().iter().cloned());
-                    tree = parser.parse(&new_source, Some(&tree)).context(
-                        "could not reparse to a tree. This is an internal error and should be reported.",
-                    )?;    
+                    }
+                    if text != old_text {
+                        has_changed = true;
+                        let input_edit = {
+                            let start_byte = m.start_byte;
+                            let old_end_byte = m.end_byte;
+                            let new_end_byte = start_byte + text.len();
+                            let start_position = m.start;
+                            let old_end_position = m.end;
+                            let new_end_position =
+                                Point::new(old_end_position.row, start_position.column + text.len());
+                            InputEdit {
+                                start_byte,
+                                old_end_byte,
+                                new_end_byte,
+                                start_position,
+                                old_end_position,
+                                new_end_position,
+                            }
+                        };
+                        tree.edit(&input_edit);
+                        new_source.splice(m.start_byte..m.end_byte, text.as_bytes().iter().cloned());
+                        println!("============= {}", String::from_utf8_lossy(&new_source).to_string());
+                        let mut file = self
+                            .extract_from_text(path, &new_source, parser)
+                            .ok()
+                            .unwrap()
+                            .expect("file");
+                        extracted_matches = file.matches;
+                        break;
+                    }
                 }
-			    let from_str = String::from("@") + m1.name;
-			    let from = from_str.as_str();
-			    let to = m1.text.as_str();
-			    text = text.replace(from, to);
             }
-		}
-		if ! self.ignores.contains(&(k-1 as usize)) {
-			extracted_matches2.push(ExtractedMatch {
-			   kind: m.kind,
-			   name: m.name,
-			   text: text,
-               start_byte: m.start_byte,
-               end_byte: m.end_byte,
-			   start: m.start,
-			   end: m.end,
-			});
-		}
+            if has_changed { 
+                break;
             }
-            Ok(Some(ExtractedFile {
-                file: path.map(|p| p.to_owned()),
-                file_type: self.language.to_string(),
-                matches: extracted_matches2,
-            }))
         }
+        // extracted_matches2.push(ExtractedMatch {
+        //     kind: tree.root_node().kind(),
+        //     name: tree.root_node().kind(),
+        //     text: source_text.clone(),
+        //     start_byte: tree.root_node().start_byte(),
+        //     end_byte: tree.root_node().end_byte(),
+        //     start: tree.root_node().start_position(),
+        //     end: tree.root_node().end_position(),
+        // });    
+        Ok(Some(ExtractedFile {
+            file: path.map(|p| p.to_owned()),
+            file_type: self.language.to_string(),
+            matches: extracted_matches2,
+        }))
     }
 }
 
