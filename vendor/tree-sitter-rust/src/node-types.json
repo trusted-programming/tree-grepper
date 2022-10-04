@@ -1720,6 +1720,16 @@
     "type": "field_pattern",
     "named": true,
     "fields": {
+      "mutable": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "mutable_specifier",
+            "named": true
+          }
+        ]
+      },
       "name": {
         "multiple": false,
         "required": true,
@@ -1744,16 +1754,6 @@
           }
         ]
       }
-    },
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "mutable_specifier",
-          "named": true
-        }
-      ]
     }
   },
   {
@@ -2401,6 +2401,16 @@
     "type": "let_declaration",
     "named": true,
     "fields": {
+      "mutable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "mutable_specifier",
+            "named": true
+          }
+        ]
+      },
       "pattern": {
         "multiple": false,
         "required": true,
@@ -2431,16 +2441,6 @@
           }
         ]
       }
-    },
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "mutable_specifier",
-          "named": true
-        }
-      ]
     }
   },
   {
@@ -2921,6 +2921,16 @@
     "type": "parameter",
     "named": true,
     "fields": {
+      "mutable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "mutable_specifier",
+            "named": true
+          }
+        ]
+      },
       "pattern": {
         "multiple": false,
         "required": true,
@@ -2945,16 +2955,6 @@
           }
         ]
       }
-    },
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "mutable_specifier",
-          "named": true
-        }
-      ]
     }
   },
   {
@@ -3007,6 +3007,20 @@
     "type": "pointer_type",
     "named": true,
     "fields": {
+      "mutable": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "const",
+            "named": false
+          },
+          {
+            "type": "mutable_specifier",
+            "named": true
+          }
+        ]
+      },
       "type": {
         "multiple": false,
         "required": true,
@@ -3017,16 +3031,6 @@
           }
         ]
       }
-    },
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "mutable_specifier",
-          "named": true
-        }
-      ]
     }
   },
   {
@@ -3128,6 +3132,16 @@
     "type": "reference_expression",
     "named": true,
     "fields": {
+      "mutable": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "mutable_specifier",
+            "named": true
+          }
+        ]
+      },
       "value": {
         "multiple": false,
         "required": true,
@@ -3138,32 +3152,29 @@
           }
         ]
       }
-    },
-    "children": {
-      "multiple": false,
-      "required": false,
-      "types": [
-        {
-          "type": "mutable_specifier",
-          "named": true
-        }
-      ]
     }
   },
   {
     "type": "reference_pattern",
     "named": true,
-    "fields": {},
+    "fields": {
+      "mutable": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "mutable_specifier",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": true,
       "types": [
         {
           "type": "_pattern",
-          "named": true
-        },
-        {
-          "type": "mutable_specifier",
           "named": true
         }
       ]
@@ -3173,6 +3184,16 @@
     "type": "reference_type",
     "named": true,
     "fields": {
+      "mutable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "mutable_specifier",
+            "named": true
+          }
+        ]
+      },
       "type": {
         "multiple": false,
         "required": true,
@@ -3185,15 +3206,11 @@
       }
     },
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": false,
       "types": [
         {
           "type": "lifetime",
-          "named": true
-        },
-        {
-          "type": "mutable_specifier",
           "named": true
         }
       ]
@@ -3426,17 +3443,24 @@
   {
     "type": "self_parameter",
     "named": true,
-    "fields": {},
+    "fields": {
+      "mutable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "mutable_specifier",
+            "named": true
+          }
+        ]
+      }
+    },
     "children": {
       "multiple": true,
       "required": true,
       "types": [
         {
           "type": "lifetime",
-          "named": true
-        },
-        {
-          "type": "mutable_specifier",
           "named": true
         },
         {
@@ -3503,6 +3527,16 @@
     "type": "static_item",
     "named": true,
     "fields": {
+      "mutable": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "mutable_specifier",
+            "named": true
+          }
+        ]
+      },
       "name": {
         "multiple": false,
         "required": true,
@@ -3535,13 +3569,9 @@
       }
     },
     "children": {
-      "multiple": true,
+      "multiple": false,
       "required": false,
       "types": [
-        {
-          "type": "mutable_specifier",
-          "named": true
-        },
         {
           "type": "visibility_modifier",
           "named": true

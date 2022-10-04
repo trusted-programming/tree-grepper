@@ -15,857 +15,857 @@ use core::ptr::NonNull;
 #[cfg(feature = "std")]
 use core::ops::{Deref, DerefMut};
 
-<SAFENESS></SAFENESS> impl Error {
-    /// Create a new error object from any error type.
-    ///
-    /// The error type must be threadsafe and `'static`, so that the `Error`
-    /// will be as well.
-    ///
-    /// If the error type does not provide a backtrace, a backtrace will be
-    /// created here to ensure that a backtrace exists.
+<SAFENESS></SAFENESS>impl Error {
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "std")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
     #[cold]
     #[must_use]
-    <SAFENESS></SAFENESS> pub fn new<E>( error: <MUTABLE></MUTABLE> E) -> Self
+    <SAFENESS></SAFENESS>pub fn new<E>(<MUTABLE></MUTABLE>error: E) -> Self
     where
-        E:<LIFETIME>static</LIFETIME> StdError + Send + Sync ,
+        E: StdError + Send + Sync <LIFETIME>'static</LIFETIME>,
     {
-         let <MUTABLE></MUTABLE> backtrace = backtrace_if_absent!(error);
+        let <MUTABLE></MUTABLE> backtrace = backtrace_if_absent!(error);
         Error::from_std(error, backtrace)
     }
 
-    /// Create a new error object from a printable error message.
-    ///
-    /// If the argument implements std::error::Error, prefer `Error::new`
-    /// instead which preserves the underlying error's cause chain and
-    /// backtrace. If the argument may or may not implement std::error::Error
-    /// now or in the future, use `anyhow!(err)` which handles either way
-    /// correctly.
-    ///
-    /// `Error::msg("...")` is equivalent to `anyhow!("...")` but occasionally
-    /// convenient in places where a function is preferable over a macro, such
-    /// as iterator or stream combinators:
-    ///
-    /// ```
-    /// # mod ffi {
-    /// #     pub struct Input;
-    /// #     pub struct Output;
-    /// #     pub async fn do_some_work(_: Input) -> Result<Output, &'static str> {
-    /// #         unimplemented!()
-    /// #     }
-    /// # }
-    /// #
-    /// # use ffi::{Input, Output};
-    /// #
-    /// use anyhow::{Error, Result};
-    /// use futures::stream::{Stream, StreamExt, TryStreamExt};
-    ///
-    /// async fn demo<S>(stream: S) -> Result<Vec<Output>>
-    /// where
-    ///     S: Stream<Item = Input>,
-    /// {
-    ///     stream
-    ///         .then(ffi::do_some_work) // returns Result<Output, &str>
-    ///         .map_err(Error::msg)
-    ///         .try_collect()
-    ///         .await
-    /// }
-    /// ```
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cold]
     #[must_use]
-    <SAFENESS></SAFENESS> pub fn msg<M>( message: <MUTABLE></MUTABLE> M) -> Self
+    <SAFENESS></SAFENESS>pub fn msg<M>(<MUTABLE></MUTABLE>message: M) -> Self
     where
-        M:<LIFETIME>static</LIFETIME> Display + Debug + Send + Sync ,
+        M: Display + Debug + Send + Sync <LIFETIME>'static</LIFETIME>,
     {
         Error::from_adhoc(message, backtrace!())
     }
 
     #[cfg(feature = "std")]
     #[cold]
-    <SAFENESS></SAFENESS> pub(crate) fn from_std<E>( error: <MUTABLE></MUTABLE> E,  backtrace: <MUTABLE></MUTABLE> Option <LIFETIME></LIFETIME> <Backtrace>) -> Self
+    <SAFENESS></SAFENESS>pub(crate) fn from_std<E>(<MUTABLE></MUTABLE>error: E, <MUTABLE></MUTABLE>backtrace: Option<LIFETIME></LIFETIME><Backtrace>) -> Self
     where
-        E:<LIFETIME>static</LIFETIME> StdError + Send + Sync ,
+        E: StdError + Send + Sync <LIFETIME>'static</LIFETIME>,
     {
-         let <MUTABLE></MUTABLE> vtable =  & <MUTABLE></MUTABLE> ErrorVTable {
-            object_drop: object_drop:: <LIFETIME></LIFETIME> <E>,
-            object_ref: object_ref:: <LIFETIME></LIFETIME> <E>,
+        let <MUTABLE></MUTABLE> vtable = &ErrorVTable {
+            object_drop: object_drop::<LIFETIME></LIFETIME><E>,
+            object_ref: object_ref::<LIFETIME></LIFETIME><E>,
             #[cfg(anyhow_no_ptr_addr_of)]
-            object_mut: object_mut:: <LIFETIME></LIFETIME> <E>,
-            object_boxed: object_boxed:: <LIFETIME></LIFETIME> <E>,
-            object_downcast: object_downcast:: <LIFETIME></LIFETIME> <E>,
+            object_mut: object_mut::<LIFETIME></LIFETIME><E>,
+            object_boxed: object_boxed::<LIFETIME></LIFETIME><E>,
+            object_downcast: object_downcast::<LIFETIME></LIFETIME><E>,
             #[cfg(anyhow_no_ptr_addr_of)]
-            object_downcast_mut: object_downcast_mut:: <LIFETIME></LIFETIME> <E>,
-            object_drop_rest: object_drop_front:: <LIFETIME></LIFETIME> <E>,
+            object_downcast_mut: object_downcast_mut::<LIFETIME></LIFETIME><E>,
+            object_drop_rest: object_drop_front::<LIFETIME></LIFETIME><E>,
             #[cfg(all(not(backtrace), feature = "backtrace"))]
             object_backtrace: no_backtrace,
         };
 
-        // Safety: passing vtable that operates on the right type E.
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { Error::construct(error, vtable, backtrace) }
+        
+        <SAFENESS>unsafe</SAFENESS> { Error::construct(error, vtable, backtrace) }
     }
 
     #[cold]
-    <SAFENESS></SAFENESS> pub(crate) fn from_adhoc<M>( message: <MUTABLE></MUTABLE> M,  backtrace: <MUTABLE></MUTABLE> Option <LIFETIME></LIFETIME> <Backtrace>) -> Self
+    <SAFENESS></SAFENESS>pub(crate) fn from_adhoc<M>(<MUTABLE></MUTABLE>message: M, <MUTABLE></MUTABLE>backtrace: Option<LIFETIME></LIFETIME><Backtrace>) -> Self
     where
-        M:<LIFETIME>static</LIFETIME> Display + Debug + Send + Sync ,
+        M: Display + Debug + Send + Sync <LIFETIME>'static</LIFETIME>,
     {
         use crate::wrapper::MessageError;
-         let error: <MUTABLE></MUTABLE> MessageError <LIFETIME></LIFETIME> <M> = MessageError(message);
-         let <MUTABLE></MUTABLE> vtable =  & <MUTABLE></MUTABLE> ErrorVTable {
-            object_drop: object_drop:: <LIFETIME></LIFETIME> <MessageError lifetime <M>>,
-            object_ref: object_ref:: <LIFETIME></LIFETIME> <MessageError lifetime <M>>,
+        let <MUTABLE></MUTABLE> error: MessageError<LIFETIME></LIFETIME><M> = MessageError(message);
+        let <MUTABLE></MUTABLE> vtable = &ErrorVTable {
+            object_drop: object_drop::<LIFETIME></LIFETIME><MessageError<LIFETIME></LIFETIME><M>>,
+            object_ref: object_ref::<LIFETIME></LIFETIME><MessageError<LIFETIME></LIFETIME><M>>,
             #[cfg(all(feature = "std", anyhow_no_ptr_addr_of))]
-            object_mut: object_mut:: <LIFETIME></LIFETIME> <MessageError lifetime <M>>,
-            object_boxed: object_boxed:: <LIFETIME></LIFETIME> <MessageError lifetime <M>>,
-            object_downcast: object_downcast:: <LIFETIME></LIFETIME> <M>,
+            object_mut: object_mut::<LIFETIME></LIFETIME><MessageError<LIFETIME></LIFETIME><M>>,
+            object_boxed: object_boxed::<LIFETIME></LIFETIME><MessageError<LIFETIME></LIFETIME><M>>,
+            object_downcast: object_downcast::<LIFETIME></LIFETIME><M>,
             #[cfg(anyhow_no_ptr_addr_of)]
-            object_downcast_mut: object_downcast_mut:: <LIFETIME></LIFETIME> <M>,
-            object_drop_rest: object_drop_front:: <LIFETIME></LIFETIME> <M>,
+            object_downcast_mut: object_downcast_mut::<LIFETIME></LIFETIME><M>,
+            object_drop_rest: object_drop_front::<LIFETIME></LIFETIME><M>,
             #[cfg(all(not(backtrace), feature = "backtrace"))]
             object_backtrace: no_backtrace,
         };
 
-        // Safety: MessageError is repr(transparent) so it is okay for the
-        // vtable to allow casting the MessageError<M> to M.
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { Error::construct(error, vtable, backtrace) }
+        
+        
+        <SAFENESS>unsafe</SAFENESS> { Error::construct(error, vtable, backtrace) }
     }
 
     #[cold]
-    <SAFENESS></SAFENESS> pub(crate) fn from_display<M>( message: <MUTABLE></MUTABLE> M,  backtrace: <MUTABLE></MUTABLE> Option <LIFETIME></LIFETIME> <Backtrace>) -> Self
+    <SAFENESS></SAFENESS>pub(crate) fn from_display<M>(<MUTABLE></MUTABLE>message: M, <MUTABLE></MUTABLE>backtrace: Option<LIFETIME></LIFETIME><Backtrace>) -> Self
     where
-        M:<LIFETIME>static</LIFETIME> Display + Send + Sync ,
+        M: Display + Send + Sync <LIFETIME>'static</LIFETIME>,
     {
         use crate::wrapper::DisplayError;
-         let error: <MUTABLE></MUTABLE> DisplayError <LIFETIME></LIFETIME> <M> = DisplayError(message);
-         let <MUTABLE></MUTABLE> vtable =  & <MUTABLE></MUTABLE> ErrorVTable {
-            object_drop: object_drop:: <LIFETIME></LIFETIME> <DisplayError lifetime <M>>,
-            object_ref: object_ref:: <LIFETIME></LIFETIME> <DisplayError lifetime <M>>,
+        let <MUTABLE></MUTABLE> error: DisplayError<LIFETIME></LIFETIME><M> = DisplayError(message);
+        let <MUTABLE></MUTABLE> vtable = &ErrorVTable {
+            object_drop: object_drop::<LIFETIME></LIFETIME><DisplayError<LIFETIME></LIFETIME><M>>,
+            object_ref: object_ref::<LIFETIME></LIFETIME><DisplayError<LIFETIME></LIFETIME><M>>,
             #[cfg(all(feature = "std", anyhow_no_ptr_addr_of))]
-            object_mut: object_mut:: <LIFETIME></LIFETIME> <DisplayError lifetime <M>>,
-            object_boxed: object_boxed:: <LIFETIME></LIFETIME> <DisplayError lifetime <M>>,
-            object_downcast: object_downcast:: <LIFETIME></LIFETIME> <M>,
+            object_mut: object_mut::<LIFETIME></LIFETIME><DisplayError<LIFETIME></LIFETIME><M>>,
+            object_boxed: object_boxed::<LIFETIME></LIFETIME><DisplayError<LIFETIME></LIFETIME><M>>,
+            object_downcast: object_downcast::<LIFETIME></LIFETIME><M>,
             #[cfg(anyhow_no_ptr_addr_of)]
-            object_downcast_mut: object_downcast_mut:: <LIFETIME></LIFETIME> <M>,
-            object_drop_rest: object_drop_front:: <LIFETIME></LIFETIME> <M>,
+            object_downcast_mut: object_downcast_mut::<LIFETIME></LIFETIME><M>,
+            object_drop_rest: object_drop_front::<LIFETIME></LIFETIME><M>,
             #[cfg(all(not(backtrace), feature = "backtrace"))]
             object_backtrace: no_backtrace,
         };
 
-        // Safety: DisplayError is repr(transparent) so it is okay for the
-        // vtable to allow casting the DisplayError<M> to M.
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { Error::construct(error, vtable, backtrace) }
+        
+        
+        <SAFENESS>unsafe</SAFENESS> { Error::construct(error, vtable, backtrace) }
     }
 
     #[cfg(feature = "std")]
     #[cold]
-    <SAFENESS></SAFENESS> pub(crate) fn from_context<C, E>( context: <MUTABLE></MUTABLE> C,  error: <MUTABLE></MUTABLE> E,  backtrace: <MUTABLE></MUTABLE> Option <LIFETIME></LIFETIME> <Backtrace>) -> Self
+    <SAFENESS></SAFENESS>pub(crate) fn from_context<C, E>(<MUTABLE></MUTABLE>context: C, <MUTABLE></MUTABLE>error: E, <MUTABLE></MUTABLE>backtrace: Option<LIFETIME></LIFETIME><Backtrace>) -> Self
     where
-        C:<LIFETIME>static</LIFETIME> Display + Send + Sync ,
-        E:<LIFETIME>static</LIFETIME> StdError + Send + Sync ,
+        C: Display + Send + Sync <LIFETIME>'static</LIFETIME>,
+        E: StdError + Send + Sync <LIFETIME>'static</LIFETIME>,
     {
-         let error: <MUTABLE></MUTABLE> ContextError <LIFETIME></LIFETIME> <C, E> = ContextError { context, error };
+        let <MUTABLE></MUTABLE> error: ContextError<LIFETIME></LIFETIME><C, E> = ContextError { context, error };
 
-         let <MUTABLE></MUTABLE> vtable =  & <MUTABLE></MUTABLE> ErrorVTable {
-            object_drop: object_drop:: <LIFETIME></LIFETIME> <ContextError lifetime <C, E>>,
-            object_ref: object_ref:: <LIFETIME></LIFETIME> <ContextError lifetime <C, E>>,
+        let <MUTABLE></MUTABLE> vtable = &ErrorVTable {
+            object_drop: object_drop::<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, E>>,
+            object_ref: object_ref::<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, E>>,
             #[cfg(anyhow_no_ptr_addr_of)]
-            object_mut: object_mut:: <LIFETIME></LIFETIME> <ContextError lifetime <C, E>>,
-            object_boxed: object_boxed:: <LIFETIME></LIFETIME> <ContextError lifetime <C, E>>,
-            object_downcast: context_downcast:: <LIFETIME></LIFETIME> <C, E>,
+            object_mut: object_mut::<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, E>>,
+            object_boxed: object_boxed::<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, E>>,
+            object_downcast: context_downcast::<LIFETIME></LIFETIME><C, E>,
             #[cfg(anyhow_no_ptr_addr_of)]
-            object_downcast_mut: context_downcast_mut:: <LIFETIME></LIFETIME> <C, E>,
-            object_drop_rest: context_drop_rest:: <LIFETIME></LIFETIME> <C, E>,
+            object_downcast_mut: context_downcast_mut::<LIFETIME></LIFETIME><C, E>,
+            object_drop_rest: context_drop_rest::<LIFETIME></LIFETIME><C, E>,
             #[cfg(all(not(backtrace), feature = "backtrace"))]
             object_backtrace: no_backtrace,
         };
 
-        // Safety: passing vtable that operates on the right type.
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { Error::construct(error, vtable, backtrace) }
+        
+        <SAFENESS>unsafe</SAFENESS> { Error::construct(error, vtable, backtrace) }
     }
 
     #[cfg(feature = "std")]
     #[cold]
-    <SAFENESS></SAFENESS> pub(crate) fn from_boxed(
-         error: <MUTABLE></MUTABLE> Box <LIFETIME></LIFETIME> <dyn StdError + Send + Sync>,
-         backtrace: <MUTABLE></MUTABLE> Option <LIFETIME></LIFETIME> <Backtrace>,
+    <SAFENESS></SAFENESS>pub(crate) fn from_boxed(
+        <MUTABLE></MUTABLE>error: Box<LIFETIME></LIFETIME><dyn StdError + Send + Sync>,
+        <MUTABLE></MUTABLE>backtrace: Option<LIFETIME></LIFETIME><Backtrace>,
     ) -> Self {
         use crate::wrapper::BoxedError;
-         let <MUTABLE></MUTABLE> error = BoxedError(error);
-         let <MUTABLE></MUTABLE> vtable =  & <MUTABLE></MUTABLE> ErrorVTable {
-            object_drop: object_drop:: <LIFETIME></LIFETIME> <BoxedError>,
-            object_ref: object_ref:: <LIFETIME></LIFETIME> <BoxedError>,
+        let <MUTABLE></MUTABLE> error = BoxedError(error);
+        let <MUTABLE></MUTABLE> vtable = &ErrorVTable {
+            object_drop: object_drop::<LIFETIME></LIFETIME><BoxedError>,
+            object_ref: object_ref::<LIFETIME></LIFETIME><BoxedError>,
             #[cfg(anyhow_no_ptr_addr_of)]
-            object_mut: object_mut:: <LIFETIME></LIFETIME> <BoxedError>,
-            object_boxed: object_boxed:: <LIFETIME></LIFETIME> <BoxedError>,
-            object_downcast: object_downcast:: <LIFETIME></LIFETIME> <Box lifetime <dyn StdError + Send + Sync>>,
+            object_mut: object_mut::<LIFETIME></LIFETIME><BoxedError>,
+            object_boxed: object_boxed::<LIFETIME></LIFETIME><BoxedError>,
+            object_downcast: object_downcast::<LIFETIME></LIFETIME><Box<LIFETIME></LIFETIME><dyn StdError + Send + Sync>>,
             #[cfg(anyhow_no_ptr_addr_of)]
-            object_downcast_mut: object_downcast_mut:: <LIFETIME></LIFETIME> <Box lifetime <dyn StdError + Send + Sync>>,
-            object_drop_rest: object_drop_front:: <LIFETIME></LIFETIME> <Box lifetime <dyn StdError + Send + Sync>>,
+            object_downcast_mut: object_downcast_mut::<LIFETIME></LIFETIME><Box<LIFETIME></LIFETIME><dyn StdError + Send + Sync>>,
+            object_drop_rest: object_drop_front::<LIFETIME></LIFETIME><Box<LIFETIME></LIFETIME><dyn StdError + Send + Sync>>,
             #[cfg(all(not(backtrace), feature = "backtrace"))]
             object_backtrace: no_backtrace,
         };
 
-        // Safety: BoxedError is repr(transparent) so it is okay for the vtable
-        // to allow casting to Box<dyn StdError + Send + Sync>.
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { Error::construct(error, vtable, backtrace) }
+        
+        
+        <SAFENESS>unsafe</SAFENESS> { Error::construct(error, vtable, backtrace) }
     }
 
-    // Takes backtrace as argument rather than capturing it here so that the
-    // user sees one fewer layer of wrapping noise in the backtrace.
-    //
-    // Unsafe because the given vtable must have sensible behavior on the error
-    // value of type E.
+    
+    
+    
+    
+    
     #[cold]
-    <SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn construct<E>(
-         error: <MUTABLE></MUTABLE> E,
-         vtable: <MUTABLE></MUTABLE>  <LIFETIME>static</LIFETIME>  & <MUTABLE></MUTABLE>  ErrorVTable,
-         backtrace: <MUTABLE></MUTABLE> Option <LIFETIME></LIFETIME> <Backtrace>,
+    <SAFENESS>unsafe</SAFENESS> fn construct<E>(
+        <MUTABLE></MUTABLE>error: E,
+        <MUTABLE></MUTABLE>vtable: <LIFETIME></LIFETIME>&<LIFETIME>'static</LIFETIME> ErrorVTable,
+        <MUTABLE></MUTABLE>backtrace: Option<LIFETIME></LIFETIME><Backtrace>,
     ) -> Self
     where
-        E:<LIFETIME>static</LIFETIME> StdError + Send + Sync ,
+        E: StdError + Send + Sync <LIFETIME>'static</LIFETIME>,
     {
-         let inner: <MUTABLE></MUTABLE> Box <LIFETIME></LIFETIME> <ErrorImpl lifetime <E>> = Box::new(ErrorImpl {
+        let <MUTABLE></MUTABLE> inner: Box<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><E>> = Box::new(ErrorImpl {
             vtable,
             backtrace,
             _object: error,
         });
-        // Erase the concrete type of E from the compile-time type system. This
-        // is equivalent to the safe unsize coercion from Box<ErrorImpl<E>> to
-        // Box<ErrorImpl<dyn StdError + Send + Sync + 'static>> except that the
-        // result is a thin pointer. The necessary behavior for manipulating the
-        // underlying ErrorImpl<E> is preserved in the vtable provided by the
-        // caller rather than a builtin fat pointer vtable.
-         let <MUTABLE></MUTABLE> inner = Own::new(inner).cast:: <LIFETIME></LIFETIME> <ErrorImpl>();
+        
+        
+        
+        
+        
+        
+        let <MUTABLE></MUTABLE> inner = Own::new(inner).cast::<LIFETIME></LIFETIME><ErrorImpl>();
         Error { inner }
     }
 
-    /// Wrap the error value with additional context.
-    ///
-    /// For attaching context to a `Result` as it is propagated, the
-    /// [`Context`][crate::Context] extension trait may be more convenient than
-    /// this function.
-    ///
-    /// The primary reason to use `error.context(...)` instead of
-    /// `result.context(...)` via the `Context` trait would be if the context
-    /// needs to depend on some data held by the underlying error:
-    ///
-    /// ```
-    /// # use std::fmt::{self, Debug, Display};
-    /// #
-    /// # type T = ();
-    /// #
-    /// # impl std::error::Error for ParseError {}
-    /// # impl Debug for ParseError {
-    /// #     fn fmt(&self, formatter: &<MUTABLE>mut</MUTABLE> fmt::Formatter) -> fmt::Result {
-    /// #         unimplemented!()
-    /// #     }
-    /// # }
-    /// # impl Display for ParseError {
-    /// #     fn fmt(&self, formatter: &<MUTABLE>mut</MUTABLE> fmt::Formatter) -> fmt::Result {
-    /// #         unimplemented!()
-    /// #     }
-    /// # }
-    /// #
-    /// use anyhow::Result;
-    /// use std::fs::File;
-    /// use std::path::Path;
-    ///
-    /// struct ParseError {
-    ///     line: usize,
-    ///     column: usize,
-    /// }
-    ///
-    /// fn parse_impl(file: File) -> Result<T, ParseError> {
-    ///     # const IGNORE: &str = stringify! {
-    ///     ...
-    ///     # };
-    ///     # unimplemented!()
-    /// }
-    ///
-    /// pub fn parse(path: impl AsRef<Path>) -> Result<T> {
-    ///     let file = File::open(&path)?;
-    ///     parse_impl(file).map_err(|error| {
-    ///         let context = format!(
-    ///             "only the first {} lines of {} are valid",
-    ///             error.line, path.as_ref().display(),
-    ///         );
-    ///         anyhow::Error::new(error).context(context)
-    ///     })
-    /// }
-    /// ```
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cold]
     #[must_use]
-    <SAFENESS></SAFENESS> pub fn context<C>( self,  <MUTABLE></MUTABLE> context: <MUTABLE></MUTABLE> C) -> Self
+    <SAFENESS></SAFENESS>pub fn context<C>(<MUTABLE></MUTABLE>self, <MUTABLE></MUTABLE>context: C) -> Self
     where
-        C:<LIFETIME>static</LIFETIME> Display + Send + Sync ,
+        C: Display + Send + Sync <LIFETIME>'static</LIFETIME>,
     {
-         let error: <MUTABLE></MUTABLE> ContextError <LIFETIME></LIFETIME> <C, Error> = ContextError {
+        let <MUTABLE></MUTABLE> error: ContextError<LIFETIME></LIFETIME><C, Error> = ContextError {
             context,
             error: self,
         };
 
-         let <MUTABLE></MUTABLE> vtable =  & <MUTABLE></MUTABLE> ErrorVTable {
-            object_drop: object_drop:: <LIFETIME></LIFETIME> <ContextError lifetime <C, Error>>,
-            object_ref: object_ref:: <LIFETIME></LIFETIME> <ContextError lifetime <C, Error>>,
+        let <MUTABLE></MUTABLE> vtable = &ErrorVTable {
+            object_drop: object_drop::<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, Error>>,
+            object_ref: object_ref::<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, Error>>,
             #[cfg(all(feature = "std", anyhow_no_ptr_addr_of))]
-            object_mut: object_mut:: <LIFETIME></LIFETIME> <ContextError lifetime <C, Error>>,
-            object_boxed: object_boxed:: <LIFETIME></LIFETIME> <ContextError lifetime <C, Error>>,
-            object_downcast: context_chain_downcast:: <LIFETIME></LIFETIME> <C>,
+            object_mut: object_mut::<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, Error>>,
+            object_boxed: object_boxed::<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, Error>>,
+            object_downcast: context_chain_downcast::<LIFETIME></LIFETIME><C>,
             #[cfg(anyhow_no_ptr_addr_of)]
-            object_downcast_mut: context_chain_downcast_mut:: <LIFETIME></LIFETIME> <C>,
-            object_drop_rest: context_chain_drop_rest:: <LIFETIME></LIFETIME> <C>,
+            object_downcast_mut: context_chain_downcast_mut::<LIFETIME></LIFETIME><C>,
+            object_drop_rest: context_chain_drop_rest::<LIFETIME></LIFETIME><C>,
             #[cfg(all(not(backtrace), feature = "backtrace"))]
-            object_backtrace: context_backtrace:: <LIFETIME></LIFETIME> <C>,
+            object_backtrace: context_backtrace::<LIFETIME></LIFETIME><C>,
         };
 
-        // As the cause is anyhow::Error, we already have a backtrace for it.
-         let <MUTABLE></MUTABLE> backtrace = None;
+        
+        let <MUTABLE></MUTABLE> backtrace = None;
 
-        // Safety: passing vtable that operates on the right type.
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { Error::construct(error, vtable, backtrace) }
+        
+        <SAFENESS>unsafe</SAFENESS> { Error::construct(error, vtable, backtrace) }
     }
 
-    /// Get the backtrace for this Error.
-    ///
-    /// In order for the backtrace to be meaningful, one of the two environment
-    /// variables `RUST_LIB_BACKTRACE=1` or `RUST_BACKTRACE=1` must be defined
-    /// and `RUST_LIB_BACKTRACE` must not be `0`. Backtraces are somewhat
-    /// expensive to capture in Rust, so we don't necessarily want to be
-    /// capturing them all over the place all the time.
-    ///
-    /// - If you want panics and errors to both have backtraces, set
-    ///   `RUST_BACKTRACE=1`;
-    /// - If you want only errors to have backtraces, set
-    ///   `RUST_LIB_BACKTRACE=1`;
-    /// - If you want only panics to have backtraces, set `RUST_BACKTRACE=1` and
-    ///   `RUST_LIB_BACKTRACE=0`.
-    ///
-    /// # Stability
-    ///
-    /// Standard library backtraces are only available on the nightly channel.
-    /// Tracking issue: [rust-lang/rust#53487][tracking].
-    ///
-    /// On stable compilers, this function is only available if the crate's
-    /// "backtrace" feature is enabled, and will use the `backtrace` crate as
-    /// the underlying backtrace implementation.
-    ///
-    /// ```toml
-    /// [dependencies]
-    /// anyhow = { version = "1.0", features = ["backtrace"] }
-    /// ```
-    ///
-    /// [tracking]: https://github.com/rust-lang/rust/issues/53487
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(any(backtrace, feature = "backtrace"))]
     #[cfg_attr(doc_cfg, doc(cfg(any(nightly, feature = "backtrace"))))]
-    <SAFENESS></SAFENESS> pub fn backtrace( & <MUTABLE></MUTABLE> self) ->  <LIFETIME></LIFETIME>  & <MUTABLE></MUTABLE> impl_backtrace!() {
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { ErrorImpl::backtrace(self.inner.by_ref()) }
+    <SAFENESS></SAFENESS>pub fn backtrace(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self) -> <LIFETIME></LIFETIME>&impl_backtrace!() {
+        <SAFENESS>unsafe</SAFENESS> { ErrorImpl::backtrace(self.inner.by_ref()) }
     }
 
-    /// An iterator of the chain of source errors contained by this Error.
-    ///
-    /// This iterator will visit every error in the cause chain of this error
-    /// object, beginning with the error that this error object was created
-    /// from.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use anyhow::Error;
-    /// use std::io;
-    ///
-    /// pub fn underlying_io_error_kind(error: &Error) -> Option<io::ErrorKind> {
-    ///     for cause in error.chain() {
-    ///         if let Some(io_error) = cause.downcast_ref::<io::Error>() {
-    ///             return Some(io_error.kind());
-    ///         }
-    ///     }
-    ///     None
-    /// }
-    /// ```
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(feature = "std")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
     #[cold]
-    <SAFENESS></SAFENESS> pub fn chain( & <MUTABLE></MUTABLE> self) -> Chain {
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { ErrorImpl::chain(self.inner.by_ref()) }
+    <SAFENESS></SAFENESS>pub fn chain(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self) -> Chain {
+        <SAFENESS>unsafe</SAFENESS> { ErrorImpl::chain(self.inner.by_ref()) }
     }
 
-    /// The lowest level cause of this error &mdash; this error's cause's
-    /// cause's cause etc.
-    ///
-    /// The root cause is the last error in the iterator produced by
-    /// [`chain()`][Error::chain].
+    
+    
+    
+    
+    
     #[cfg(feature = "std")]
     #[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
-    <SAFENESS></SAFENESS> pub fn root_cause( & <MUTABLE></MUTABLE> self) ->  <LIFETIME>static</LIFETIME>  & <MUTABLE></MUTABLE> (dyn StdError) {
+    <SAFENESS></SAFENESS>pub fn root_cause(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self) -> <LIFETIME></LIFETIME>&(dyn StdError <LIFETIME>'static</LIFETIME>) {
         self.chain().last().unwrap()
     }
 
-    /// Returns true if `E` is the type held by this error object.
-    ///
-    /// For errors with context, this method returns true if `E` matches the
-    /// type of the context `C` **or** the type of the error on which the
-    /// context has been attached. For details about the interaction between
-    /// context and downcasting, [see here].
-    ///
-    /// [see here]: trait.Context.html#effect-on-downcasting
-    <SAFENESS></SAFENESS> pub fn is<E>( & <MUTABLE></MUTABLE> self) -> bool
+    
+    
+    
+    
+    
+    
+    
+    
+    <SAFENESS></SAFENESS>pub fn is<E>(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self) -> bool
     where
-        E:<LIFETIME>static</LIFETIME> Display + Debug + Send + Sync ,
+        E: Display + Debug + Send + Sync <LIFETIME>'static</LIFETIME>,
     {
-        self.downcast_ref:: <LIFETIME></LIFETIME> <E>().is_some()
+        self.downcast_ref::<LIFETIME></LIFETIME><E>().is_some()
     }
 
-    /// Attempt to downcast the error object to a concrete type.
-    <SAFENESS></SAFENESS> pub fn downcast<E>( <MUTABLE>mut</MUTABLE> self) -> Result <LIFETIME></LIFETIME> <E, Self>
+    
+    <SAFENESS></SAFENESS>pub fn downcast<E>(<MUTABLE>mut</MUTABLE> self) -> Result<LIFETIME></LIFETIME><E, Self>
     where
-        E:<LIFETIME>static</LIFETIME> Display + Debug + Send + Sync ,
+        E: Display + Debug + Send + Sync <LIFETIME>'static</LIFETIME>,
     {
-         let <MUTABLE></MUTABLE> target = TypeId::of:: <LIFETIME></LIFETIME> <E>();
-         let <MUTABLE></MUTABLE> inner = self.inner.by_mut();
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> {
-            // Use vtable to find NonNull<()> which points to a value of type E
-            // somewhere inside the data structure.
+        let <MUTABLE></MUTABLE> target = TypeId::of::<LIFETIME></LIFETIME><E>();
+        let <MUTABLE></MUTABLE> inner = self.inner.by_mut();
+        <SAFENESS>unsafe</SAFENESS> {
+            
+            
             #[cfg(not(anyhow_no_ptr_addr_of))]
-             let <MUTABLE></MUTABLE> addr = match (vtable(inner.ptr).object_downcast)(inner.by_ref(), target) {
+            let <MUTABLE></MUTABLE> addr = match (vtable(inner.ptr).object_downcast)(inner.by_ref(), target) {
                 Some(addr) => addr.by_mut().extend(),
                 None => return Err(self),
             };
             #[cfg(anyhow_no_ptr_addr_of)]
-             let <MUTABLE></MUTABLE> addr = match (vtable(inner.ptr).object_downcast_mut)(inner, target) {
+            let <MUTABLE></MUTABLE> addr = match (vtable(inner.ptr).object_downcast_mut)(inner, target) {
                 Some(addr) => addr.extend(),
                 None => return Err(self),
             };
 
-            // Prepare to read E out of the data structure. We'll drop the rest
-            // of the data structure separately so that E is not dropped.
-             let <MUTABLE></MUTABLE> outer = ManuallyDrop::new(self);
+            
+            
+            let <MUTABLE></MUTABLE> outer = ManuallyDrop::new(self);
 
-            // Read E from where the vtable found it.
-             let <MUTABLE></MUTABLE> error = addr.cast:: <LIFETIME></LIFETIME> <E>().read();
+            
+            let <MUTABLE></MUTABLE> error = addr.cast::<LIFETIME></LIFETIME><E>().read();
 
-            // Drop rest of the data structure outside of E.
+            
             (vtable(outer.inner.ptr).object_drop_rest)(outer.inner, target);
 
             Ok(error)
         }
     }
 
-    /// Downcast this error object by reference.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// # use anyhow::anyhow;
-    /// # use std::fmt::{self, Display};
-    /// # use std::task::Poll;
-    /// #
-    /// # #[derive(Debug)]
-    /// # enum DataStoreError {
-    /// #     Censored(()),
-    /// # }
-    /// #
-    /// # impl Display for DataStoreError {
-    /// #     fn fmt(&self, formatter: &<MUTABLE>mut</MUTABLE> fmt::Formatter) -> fmt::Result {
-    /// #         unimplemented!()
-    /// #     }
-    /// # }
-    /// #
-    /// # impl std::error::Error for DataStoreError {}
-    /// #
-    /// # const REDACTED_CONTENT: () = ();
-    /// #
-    /// # let error = anyhow!("...");
-    /// # let root_cause = &error;
-    /// #
-    /// # let ret =
-    /// // If the error was caused by redaction, then return a tombstone instead
-    /// // of the content.
-    /// match root_cause.downcast_ref::<DataStoreError>() {
-    ///     Some(DataStoreError::Censored(_)) => Ok(Poll::Ready(REDACTED_CONTENT)),
-    ///     None => Err(error),
-    /// }
-    /// # ;
-    /// ```
-    <SAFENESS></SAFENESS> pub fn downcast_ref<E>( & <MUTABLE></MUTABLE> self) -> Option <LIFETIME></LIFETIME> < lifetime  & <MUTABLE></MUTABLE> E>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <SAFENESS></SAFENESS>pub fn downcast_ref<E>(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self) -> Option<LIFETIME></LIFETIME><<LIFETIME></LIFETIME>&E>
     where
-        E:<LIFETIME>static</LIFETIME> Display + Debug + Send + Sync ,
+        E: Display + Debug + Send + Sync <LIFETIME>'static</LIFETIME>,
     {
-         let <MUTABLE></MUTABLE> target = TypeId::of:: <LIFETIME></LIFETIME> <E>();
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> {
-            // Use vtable to find NonNull<()> which points to a value of type E
-            // somewhere inside the data structure.
-             let <MUTABLE></MUTABLE> addr = (vtable(self.inner.ptr).object_downcast)(self.inner.by_ref(), target)?;
-            Some(addr.cast:: <LIFETIME></LIFETIME> <E>().deref())
+        let <MUTABLE></MUTABLE> target = TypeId::of::<LIFETIME></LIFETIME><E>();
+        <SAFENESS>unsafe</SAFENESS> {
+            
+            
+            let <MUTABLE></MUTABLE> addr = (vtable(self.inner.ptr).object_downcast)(self.inner.by_ref(), target)?;
+            Some(addr.cast::<LIFETIME></LIFETIME><E>().deref())
         }
     }
 
-    /// Downcast this error object by <MUTABLE></MUTABLE> reference.
-    <SAFENESS></SAFENESS> pub fn downcast_mut<E>( & <MUTABLE>mut</MUTABLE> self) -> Option <LIFETIME></LIFETIME> < lifetime  & <MUTABLE>mut</MUTABLE> E>
+    
+    <SAFENESS></SAFENESS>pub fn downcast_mut<E>(&<MUTABLE>mut</MUTABLE> self) -> Option<LIFETIME></LIFETIME><<LIFETIME></LIFETIME>&<MUTABLE>mut</MUTABLE> E>
     where
-        E:<LIFETIME>static</LIFETIME> Display + Debug + Send + Sync ,
+        E: Display + Debug + Send + Sync <LIFETIME>'static</LIFETIME>,
     {
-         let <MUTABLE></MUTABLE> target = TypeId::of:: <LIFETIME></LIFETIME> <E>();
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> {
-            // Use vtable to find NonNull<()> which points to a value of type E
-            // somewhere inside the data structure.
+        let <MUTABLE></MUTABLE> target = TypeId::of::<LIFETIME></LIFETIME><E>();
+        <SAFENESS>unsafe</SAFENESS> {
+            
+            
 
             #[cfg(not(anyhow_no_ptr_addr_of))]
-             let <MUTABLE></MUTABLE> addr =
+            let <MUTABLE></MUTABLE> addr =
                 (vtable(self.inner.ptr).object_downcast)(self.inner.by_ref(), target)?.by_mut();
 
             #[cfg(anyhow_no_ptr_addr_of)]
-             let <MUTABLE></MUTABLE> addr = (vtable(self.inner.ptr).object_downcast_mut)(self.inner.by_mut(), target)?;
+            let <MUTABLE></MUTABLE> addr = (vtable(self.inner.ptr).object_downcast_mut)(self.inner.by_mut(), target)?;
 
-            Some(addr.cast:: <LIFETIME></LIFETIME> <E>().deref_mut())
+            Some(addr.cast::<LIFETIME></LIFETIME><E>().deref_mut())
         }
     }
 }
 
 #[cfg(feature = "std")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
-<SAFENESS></SAFENESS> impl<E> From <LIFETIME></LIFETIME> <E> for Error
+<SAFENESS></SAFENESS>impl<E> From<LIFETIME></LIFETIME><E> for Error
 where
-    E:<LIFETIME>static</LIFETIME> StdError + Send + Sync ,
+    E: StdError + Send + Sync <LIFETIME>'static</LIFETIME>,
 {
     #[cold]
-    <SAFENESS></SAFENESS> fn from( error: <MUTABLE></MUTABLE> E) -> Self {
-         let <MUTABLE></MUTABLE> backtrace = backtrace_if_absent!(error);
+    <SAFENESS></SAFENESS>fn from(<MUTABLE></MUTABLE>error: E) -> Self {
+        let <MUTABLE></MUTABLE> backtrace = backtrace_if_absent!(error);
         Error::from_std(error, backtrace)
     }
 }
 
 #[cfg(feature = "std")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
-<SAFENESS></SAFENESS> impl Deref for Error {
-    type Target = dyn StdError + Send + Sync + 'static;
+<SAFENESS></SAFENESS>impl Deref for Error {
+    type Target = dyn StdError + Send + Sync <LIFETIME>'static</LIFETIME>;
 
-    <SAFENESS></SAFENESS> fn deref( & <MUTABLE></MUTABLE> self) ->  <LIFETIME></LIFETIME>  & <MUTABLE></MUTABLE> Self::Target {
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { ErrorImpl::error(self.inner.by_ref()) }
+    <SAFENESS></SAFENESS>fn deref(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self) -> <LIFETIME></LIFETIME>&Self::Target {
+        <SAFENESS>unsafe</SAFENESS> { ErrorImpl::error(self.inner.by_ref()) }
     }
 }
 
 #[cfg(feature = "std")]
 #[cfg_attr(doc_cfg, doc(cfg(feature = "std")))]
-<SAFENESS></SAFENESS> impl DerefMut for Error {
-    <SAFENESS></SAFENESS> fn deref_mut( & <MUTABLE>mut</MUTABLE> self) ->  <LIFETIME></LIFETIME>  & <MUTABLE>mut</MUTABLE> Self::Target {
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { ErrorImpl::error_mut(self.inner.by_mut()) }
+<SAFENESS></SAFENESS>impl DerefMut for Error {
+    <SAFENESS></SAFENESS>fn deref_mut(&<MUTABLE>mut</MUTABLE> self) -> <LIFETIME></LIFETIME>&<MUTABLE>mut</MUTABLE> Self::Target {
+        <SAFENESS>unsafe</SAFENESS> { ErrorImpl::error_mut(self.inner.by_mut()) }
     }
 }
 
-<SAFENESS></SAFENESS> impl Display for Error {
-    <SAFENESS></SAFENESS> fn fmt( & self,  <MUTABLE></MUTABLE> formatter: <MUTABLE></MUTABLE>  <LIFETIME></LIFETIME>  & <MUTABLE>mut</MUTABLE> fmt::Formatter) -> fmt::Result {
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { ErrorImpl::display(self.inner.by_ref(), formatter) }
+<SAFENESS></SAFENESS>impl Display for Error {
+    <SAFENESS></SAFENESS>fn fmt(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self, <MUTABLE></MUTABLE>formatter: <LIFETIME></LIFETIME>&<MUTABLE>mut</MUTABLE> fmt::Formatter) -> fmt::Result {
+        <SAFENESS>unsafe</SAFENESS> { ErrorImpl::display(self.inner.by_ref(), formatter) }
     }
 }
 
-<SAFENESS></SAFENESS> impl Debug for Error {
-    <SAFENESS></SAFENESS> fn fmt( & self,  <MUTABLE></MUTABLE> formatter: <MUTABLE></MUTABLE>  <LIFETIME></LIFETIME>  & <MUTABLE>mut</MUTABLE> fmt::Formatter) -> fmt::Result {
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { ErrorImpl::debug(self.inner.by_ref(), formatter) }
+<SAFENESS></SAFENESS>impl Debug for Error {
+    <SAFENESS></SAFENESS>fn fmt(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self, <MUTABLE></MUTABLE>formatter: <LIFETIME></LIFETIME>&<MUTABLE>mut</MUTABLE> fmt::Formatter) -> fmt::Result {
+        <SAFENESS>unsafe</SAFENESS> { ErrorImpl::debug(self.inner.by_ref(), formatter) }
     }
 }
 
-<SAFENESS></SAFENESS> impl Drop for Error {
-    <SAFENESS></SAFENESS> fn drop( & <MUTABLE>mut</MUTABLE> self) {
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> {
-            // Invoke the vtable's drop behavior.
+<SAFENESS></SAFENESS>impl Drop for Error {
+    <SAFENESS></SAFENESS>fn drop(&<MUTABLE>mut</MUTABLE> self) {
+        <SAFENESS>unsafe</SAFENESS> {
+            
             (vtable(self.inner.ptr).object_drop)(self.inner);
         }
     }
 }
 
 struct ErrorVTable {
-    object_drop: <SAFENESS></SAFENESS> safeness <SAFENESS>unsafe</SAFENESS> fn(Own <LIFETIME></LIFETIME> <ErrorImpl>),
-    object_ref: <SAFENESS></SAFENESS> safeness <SAFENESS>unsafe</SAFENESS> fn(Ref <LIFETIME>static</LIFETIME> <ErrorImpl>) -> Ref <LIFETIME></LIFETIME> <dyn StdError + Send + Sync>,
+    object_drop: <SAFENESS></SAFENESS><SAFENESS>unsafe</SAFENESS> fn(Own<LIFETIME></LIFETIME><ErrorImpl>),
+    object_ref: <SAFENESS></SAFENESS><SAFENESS>unsafe</SAFENESS> fn(Ref<LIFETIME></LIFETIME><ErrorImpl>) -> Ref<LIFETIME></LIFETIME><dyn StdError + Send + Sync <LIFETIME>'static</LIFETIME>>,
     #[cfg(all(feature = "std", anyhow_no_ptr_addr_of))]
-    object_mut: <SAFENESS></SAFENESS> safeness <SAFENESS>unsafe</SAFENESS> fn(Mut <LIFETIME>static</LIFETIME> <ErrorImpl>) ->  <LIFETIME></LIFETIME>  & <MUTABLE>mut</MUTABLE> (dyn StdError + Send + Sync),
-    object_boxed: <SAFENESS></SAFENESS> safeness <SAFENESS>unsafe</SAFENESS> fn(Own <LIFETIME>static</LIFETIME> <ErrorImpl>) -> Box <LIFETIME></LIFETIME> <dyn StdError + Send + Sync>,
-    object_downcast: <SAFENESS></SAFENESS> safeness <SAFENESS>unsafe</SAFENESS> fn(Ref <LIFETIME></LIFETIME> <ErrorImpl>, TypeId) -> Option lifetime <Ref lifetime <()>>,
+    object_mut: <SAFENESS></SAFENESS><SAFENESS>unsafe</SAFENESS> fn(Mut<LIFETIME></LIFETIME><ErrorImpl>) -> <LIFETIME></LIFETIME>&<MUTABLE>mut</MUTABLE> (dyn StdError + Send + Sync <LIFETIME>'static</LIFETIME>),
+    object_boxed: <SAFENESS></SAFENESS><SAFENESS>unsafe</SAFENESS> fn(Own<LIFETIME></LIFETIME><ErrorImpl>) -> Box<LIFETIME></LIFETIME><dyn StdError + Send + Sync <LIFETIME>'static</LIFETIME>>,
+    object_downcast: <SAFENESS></SAFENESS><SAFENESS>unsafe</SAFENESS> fn(Ref<LIFETIME></LIFETIME><ErrorImpl>, TypeId) -> Option<LIFETIME></LIFETIME><Ref<LIFETIME></LIFETIME><()>>,
     #[cfg(anyhow_no_ptr_addr_of)]
-    object_downcast_mut: <SAFENESS></SAFENESS> safeness <SAFENESS>unsafe</SAFENESS> fn(Mut <LIFETIME></LIFETIME> <ErrorImpl>, TypeId) -> Option lifetime <Mut lifetime <()>>,
-    object_drop_rest: <SAFENESS></SAFENESS> safeness <SAFENESS>unsafe</SAFENESS> fn(Own <LIFETIME></LIFETIME> <ErrorImpl>, TypeId),
+    object_downcast_mut: <SAFENESS></SAFENESS><SAFENESS>unsafe</SAFENESS> fn(Mut<LIFETIME></LIFETIME><ErrorImpl>, TypeId) -> Option<LIFETIME></LIFETIME><Mut<LIFETIME></LIFETIME><()>>,
+    object_drop_rest: <SAFENESS></SAFENESS><SAFENESS>unsafe</SAFENESS> fn(Own<LIFETIME></LIFETIME><ErrorImpl>, TypeId),
     #[cfg(all(not(backtrace), feature = "backtrace"))]
-    object_backtrace: <SAFENESS></SAFENESS> safeness <SAFENESS>unsafe</SAFENESS> fn(Ref <LIFETIME></LIFETIME> <ErrorImpl>) -> Option lifetime < lifetime  & <MUTABLE></MUTABLE> Backtrace>,
+    object_backtrace: <SAFENESS></SAFENESS><SAFENESS>unsafe</SAFENESS> fn(Ref<LIFETIME></LIFETIME><ErrorImpl>) -> Option<LIFETIME></LIFETIME><<LIFETIME></LIFETIME>&Backtrace>,
 }
 
-// Safety: requires layout of *e to match ErrorImpl<E>.
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn object_drop<E>( e: <MUTABLE></MUTABLE> Own <LIFETIME></LIFETIME> <ErrorImpl>) {
-    // Cast back to ErrorImpl<E> so that the allocator receives the correct
-    // Layout to deallocate the Box's memory.
-     let <MUTABLE></MUTABLE> unerased = e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <E>>().boxed();
+
+<SAFENESS>unsafe</SAFENESS> fn object_drop<E>(<MUTABLE></MUTABLE>e: Own<LIFETIME></LIFETIME><ErrorImpl>) {
+    
+    
+    let <MUTABLE></MUTABLE> unerased = e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><E>>().boxed();
     drop(unerased);
 }
 
-// Safety: requires layout of *e to match ErrorImpl<E>.
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn object_drop_front<E>( e: <MUTABLE></MUTABLE> Own <LIFETIME></LIFETIME> <ErrorImpl>,  target: <MUTABLE></MUTABLE> TypeId) {
-    // Drop the fields of ErrorImpl other than E as well as the Box allocation,
-    // without dropping E itself. This is used by downcast after doing a
-    // ptr::read to take ownership of the E.
-     let <MUTABLE></MUTABLE> _ = target;
-     let <MUTABLE></MUTABLE> unerased = e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <ManuallyDrop lifetime <E>>>().boxed();
+
+<SAFENESS>unsafe</SAFENESS> fn object_drop_front<E>(<MUTABLE></MUTABLE>e: Own<LIFETIME></LIFETIME><ErrorImpl>, <MUTABLE></MUTABLE>target: TypeId) {
+    
+    
+    
+    let <MUTABLE></MUTABLE> _ = target;
+    let <MUTABLE></MUTABLE> unerased = e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><ManuallyDrop<LIFETIME></LIFETIME><E>>>().boxed();
     drop(unerased);
 }
 
-// Safety: requires layout of *e to match ErrorImpl<E>.
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn object_ref<E>( e: <MUTABLE></MUTABLE> Ref <LIFETIME>static</LIFETIME> <ErrorImpl>) -> Ref <LIFETIME></LIFETIME> <dyn StdError + Send + Sync>
+
+<SAFENESS>unsafe</SAFENESS> fn object_ref<E>(<MUTABLE></MUTABLE>e: Ref<LIFETIME></LIFETIME><ErrorImpl>) -> Ref<LIFETIME></LIFETIME><dyn StdError + Send + Sync <LIFETIME>'static</LIFETIME>>
 where
-    E:<LIFETIME>static</LIFETIME> StdError + Send + Sync ,
+    E: StdError + Send + Sync <LIFETIME>'static</LIFETIME>,
 {
-    // Attach E's native StdError vtable onto a pointer to self._object.
+    
 
-     let <MUTABLE></MUTABLE> unerased = e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <E>>();
+    let <MUTABLE></MUTABLE> unerased = e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><E>>();
 
     #[cfg(not(anyhow_no_ptr_addr_of))]
     return Ref::from_raw(NonNull::new_unchecked(
-        ptr::addr_of!((*unerased.as_ptr())._object) as  * <MUTABLE>mut</MUTABLE> E,
+        ptr::addr_of!((*unerased.as_ptr())._object) as *<MUTABLE>mut</MUTABLE> E,
     ));
 
     #[cfg(anyhow_no_ptr_addr_of)]
-    return Ref::new( & <MUTABLE></MUTABLE> unerased.deref()._object);
+    return Ref::new(&unerased.deref()._object);
 }
 
-// Safety: requires layout of *e to match ErrorImpl<E>, and for `e` to be derived
-// from a `&mut`
+
+
 #[cfg(all(feature = "std", anyhow_no_ptr_addr_of))]
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn object_mut<E>( e: <MUTABLE></MUTABLE> Mut <LIFETIME>static</LIFETIME> <ErrorImpl>) ->  <LIFETIME></LIFETIME>  & <MUTABLE>mut</MUTABLE> (dyn StdError + Send + Sync)
+<SAFENESS>unsafe</SAFENESS> fn object_mut<E>(<MUTABLE></MUTABLE>e: Mut<LIFETIME></LIFETIME><ErrorImpl>) -> <LIFETIME></LIFETIME>&<MUTABLE>mut</MUTABLE> (dyn StdError + Send + Sync <LIFETIME>'static</LIFETIME>)
 where
-    E:<LIFETIME>static</LIFETIME> StdError + Send + Sync ,
+    E: StdError + Send + Sync <LIFETIME>'static</LIFETIME>,
 {
-    // Attach E's native StdError vtable onto a pointer to self._object.
-     & <MUTABLE>mut</MUTABLE> e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <E>>().deref_mut()._object
+    
+    &<MUTABLE>mut</MUTABLE> e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><E>>().deref_mut()._object
 }
 
-// Safety: requires layout of *e to match ErrorImpl<E>.
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn object_boxed<E>( e: <MUTABLE></MUTABLE> Own <LIFETIME>static</LIFETIME> <ErrorImpl>) -> Box <LIFETIME></LIFETIME> <dyn StdError + Send + Sync>
+
+<SAFENESS>unsafe</SAFENESS> fn object_boxed<E>(<MUTABLE></MUTABLE>e: Own<LIFETIME></LIFETIME><ErrorImpl>) -> Box<LIFETIME></LIFETIME><dyn StdError + Send + Sync <LIFETIME>'static</LIFETIME>>
 where
-    E:<LIFETIME>static</LIFETIME> StdError + Send + Sync ,
+    E: StdError + Send + Sync <LIFETIME>'static</LIFETIME>,
 {
-    // Attach ErrorImpl<E>'s native StdError vtable. The StdError impl is below.
-    e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <E>>().boxed()
+    
+    e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><E>>().boxed()
 }
 
-// Safety: requires layout of *e to match ErrorImpl<E>.
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn object_downcast<E>( e: <MUTABLE></MUTABLE> Ref <LIFETIME></LIFETIME> <ErrorImpl>,  target: <MUTABLE></MUTABLE> TypeId) -> Option lifetime <Ref lifetime <()>>
-where
-    E: 'static,
-{
-    if TypeId::of:: <LIFETIME></LIFETIME> <E>() == target {
-        // Caller is looking for an E pointer and e is ErrorImpl<E>, take a
-        // pointer to its E field.
 
-         let <MUTABLE></MUTABLE> unerased = e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <E>>();
+<SAFENESS>unsafe</SAFENESS> fn object_downcast<E>(<MUTABLE></MUTABLE>e: Ref<LIFETIME></LIFETIME><ErrorImpl>, <MUTABLE></MUTABLE>target: TypeId) -> Option<LIFETIME></LIFETIME><Ref<LIFETIME></LIFETIME><()>>
+where
+    E: <LIFETIME>'static</LIFETIME>,
+{
+    if TypeId::of::<LIFETIME></LIFETIME><E>() == target {
+        
+        
+
+        let <MUTABLE></MUTABLE> unerased = e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><E>>();
 
         #[cfg(not(anyhow_no_ptr_addr_of))]
         return Some(
             Ref::from_raw(NonNull::new_unchecked(
-                ptr::addr_of!((*unerased.as_ptr())._object) as  * <MUTABLE>mut</MUTABLE> E,
+                ptr::addr_of!((*unerased.as_ptr())._object) as *<MUTABLE>mut</MUTABLE> E,
             ))
-            .cast:: <LIFETIME></LIFETIME> <()>(),
+            .cast::<LIFETIME></LIFETIME><()>(),
         );
 
         #[cfg(anyhow_no_ptr_addr_of)]
-        return Some(Ref::new( & <MUTABLE></MUTABLE> unerased.deref()._object).cast:: <LIFETIME></LIFETIME> <()>());
+        return Some(Ref::new(&unerased.deref()._object).cast::<LIFETIME></LIFETIME><()>());
     } else {
         None
     }
 }
 
-// Safety: requires layout of *e to match ErrorImpl<E>.
+
 #[cfg(anyhow_no_ptr_addr_of)]
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn object_downcast_mut<E>( e: <MUTABLE></MUTABLE> Mut <LIFETIME></LIFETIME> <ErrorImpl>,  target: <MUTABLE></MUTABLE> TypeId) -> Option lifetime <Mut lifetime <()>>
+<SAFENESS>unsafe</SAFENESS> fn object_downcast_mut<E>(<MUTABLE></MUTABLE>e: Mut<LIFETIME></LIFETIME><ErrorImpl>, <MUTABLE></MUTABLE>target: TypeId) -> Option<LIFETIME></LIFETIME><Mut<LIFETIME></LIFETIME><()>>
 where
-    E: 'static,
+    E: <LIFETIME>'static</LIFETIME>,
 {
-    if TypeId::of:: <LIFETIME></LIFETIME> <E>() == target {
-        // Caller is looking for an E pointer and e is ErrorImpl<E>, take a
-        // pointer to its E field.
-         let <MUTABLE></MUTABLE> unerased = e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <E>>().deref_mut();
-        Some(Mut::new( & <MUTABLE>mut</MUTABLE> unerased._object).cast:: <LIFETIME></LIFETIME> <()>())
+    if TypeId::of::<LIFETIME></LIFETIME><E>() == target {
+        
+        
+        let <MUTABLE></MUTABLE> unerased = e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><E>>().deref_mut();
+        Some(Mut::new(&<MUTABLE>mut</MUTABLE> unerased._object).cast::<LIFETIME></LIFETIME><()>())
     } else {
         None
     }
 }
 
 #[cfg(all(not(backtrace), feature = "backtrace"))]
-<SAFENESS></SAFENESS> fn no_backtrace( e: <MUTABLE></MUTABLE> Ref <LIFETIME></LIFETIME> <ErrorImpl>) -> Option lifetime < lifetime  & <MUTABLE></MUTABLE> Backtrace> {
-     let <MUTABLE></MUTABLE> _ = e;
+<SAFENESS></SAFENESS>fn no_backtrace(<MUTABLE></MUTABLE>e: Ref<LIFETIME></LIFETIME><ErrorImpl>) -> Option<LIFETIME></LIFETIME><<LIFETIME></LIFETIME>&Backtrace> {
+    let <MUTABLE></MUTABLE> _ = e;
     None
 }
 
-// Safety: requires layout of *e to match ErrorImpl<ContextError<C, E>>.
+
 #[cfg(feature = "std")]
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn context_downcast<C, E>( e: <MUTABLE></MUTABLE> Ref <LIFETIME></LIFETIME> <ErrorImpl>,  target: <MUTABLE></MUTABLE> TypeId) -> Option lifetime <Ref lifetime <()>>
+<SAFENESS>unsafe</SAFENESS> fn context_downcast<C, E>(<MUTABLE></MUTABLE>e: Ref<LIFETIME></LIFETIME><ErrorImpl>, <MUTABLE></MUTABLE>target: TypeId) -> Option<LIFETIME></LIFETIME><Ref<LIFETIME></LIFETIME><()>>
 where
-    C: 'static,
-    E: 'static,
+    C: <LIFETIME>'static</LIFETIME>,
+    E: <LIFETIME>'static</LIFETIME>,
 {
-    if TypeId::of:: <LIFETIME></LIFETIME> <C>() == target {
-         let <MUTABLE></MUTABLE> unerased = e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <ContextError lifetime <C, E>>>().deref();
-        Some(Ref::new( & <MUTABLE></MUTABLE> unerased._object.context).cast:: <LIFETIME></LIFETIME> <()>())
-    } else if TypeId::of:: <LIFETIME></LIFETIME> <E>() == target {
-         let <MUTABLE></MUTABLE> unerased = e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <ContextError lifetime <C, E>>>().deref();
-        Some(Ref::new( & <MUTABLE></MUTABLE> unerased._object.error).cast:: <LIFETIME></LIFETIME> <()>())
+    if TypeId::of::<LIFETIME></LIFETIME><C>() == target {
+        let <MUTABLE></MUTABLE> unerased = e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, E>>>().deref();
+        Some(Ref::new(&unerased._object.context).cast::<LIFETIME></LIFETIME><()>())
+    } else if TypeId::of::<LIFETIME></LIFETIME><E>() == target {
+        let <MUTABLE></MUTABLE> unerased = e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, E>>>().deref();
+        Some(Ref::new(&unerased._object.error).cast::<LIFETIME></LIFETIME><()>())
     } else {
         None
     }
 }
 
-// Safety: requires layout of *e to match ErrorImpl<ContextError<C, E>>.
+
 #[cfg(all(feature = "std", anyhow_no_ptr_addr_of))]
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn context_downcast_mut<C, E>( e: <MUTABLE></MUTABLE> Mut <LIFETIME></LIFETIME> <ErrorImpl>,  target: <MUTABLE></MUTABLE> TypeId) -> Option lifetime <Mut lifetime <()>>
+<SAFENESS>unsafe</SAFENESS> fn context_downcast_mut<C, E>(<MUTABLE></MUTABLE>e: Mut<LIFETIME></LIFETIME><ErrorImpl>, <MUTABLE></MUTABLE>target: TypeId) -> Option<LIFETIME></LIFETIME><Mut<LIFETIME></LIFETIME><()>>
 where
-    C: 'static,
-    E: 'static,
+    C: <LIFETIME>'static</LIFETIME>,
+    E: <LIFETIME>'static</LIFETIME>,
 {
-    if TypeId::of:: <LIFETIME></LIFETIME> <C>() == target {
-         let <MUTABLE></MUTABLE> unerased = e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <ContextError lifetime <C, E>>>().deref_mut();
-        Some(Mut::new( & <MUTABLE>mut</MUTABLE> unerased._object.context).cast:: <LIFETIME></LIFETIME> <()>())
-    } else if TypeId::of:: <LIFETIME></LIFETIME> <E>() == target {
-         let <MUTABLE></MUTABLE> unerased = e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <ContextError lifetime <C, E>>>().deref_mut();
-        Some(Mut::new( & <MUTABLE>mut</MUTABLE> unerased._object.error).cast:: <LIFETIME></LIFETIME> <()>())
+    if TypeId::of::<LIFETIME></LIFETIME><C>() == target {
+        let <MUTABLE></MUTABLE> unerased = e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, E>>>().deref_mut();
+        Some(Mut::new(&<MUTABLE>mut</MUTABLE> unerased._object.context).cast::<LIFETIME></LIFETIME><()>())
+    } else if TypeId::of::<LIFETIME></LIFETIME><E>() == target {
+        let <MUTABLE></MUTABLE> unerased = e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, E>>>().deref_mut();
+        Some(Mut::new(&<MUTABLE>mut</MUTABLE> unerased._object.error).cast::<LIFETIME></LIFETIME><()>())
     } else {
         None
     }
 }
 
-// Safety: requires layout of *e to match ErrorImpl<ContextError<C, E>>.
+
 #[cfg(feature = "std")]
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn context_drop_rest<C, E>( e: <MUTABLE></MUTABLE> Own <LIFETIME></LIFETIME> <ErrorImpl>,  target: <MUTABLE></MUTABLE> TypeId)
+<SAFENESS>unsafe</SAFENESS> fn context_drop_rest<C, E>(<MUTABLE></MUTABLE>e: Own<LIFETIME></LIFETIME><ErrorImpl>, <MUTABLE></MUTABLE>target: TypeId)
 where
-    C: 'static,
-    E: 'static,
+    C: <LIFETIME>'static</LIFETIME>,
+    E: <LIFETIME>'static</LIFETIME>,
 {
-    // Called after downcasting by value to either the C or the E and doing a
-    // ptr::read to take ownership of that value.
-    if TypeId::of:: <LIFETIME></LIFETIME> <C>() == target {
-         let <MUTABLE></MUTABLE> unerased = e
-            .cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <ContextError lifetime <ManuallyDrop lifetime <C>, E>>>()
+    
+    
+    if TypeId::of::<LIFETIME></LIFETIME><C>() == target {
+        let <MUTABLE></MUTABLE> unerased = e
+            .cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><ManuallyDrop<LIFETIME></LIFETIME><C>, E>>>()
             .boxed();
         drop(unerased);
     } else {
-         let <MUTABLE></MUTABLE> unerased = e
-            .cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <ContextError lifetime <C, ManuallyDrop lifetime <E>>>>()
+        let <MUTABLE></MUTABLE> unerased = e
+            .cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, ManuallyDrop<LIFETIME></LIFETIME><E>>>>()
             .boxed();
         drop(unerased);
     }
 }
 
-// Safety: requires layout of *e to match ErrorImpl<ContextError<C, Error>>.
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn context_chain_downcast<C>( e: <MUTABLE></MUTABLE> Ref <LIFETIME></LIFETIME> <ErrorImpl>,  target: <MUTABLE></MUTABLE> TypeId) -> Option lifetime <Ref lifetime <()>>
+
+<SAFENESS>unsafe</SAFENESS> fn context_chain_downcast<C>(<MUTABLE></MUTABLE>e: Ref<LIFETIME></LIFETIME><ErrorImpl>, <MUTABLE></MUTABLE>target: TypeId) -> Option<LIFETIME></LIFETIME><Ref<LIFETIME></LIFETIME><()>>
 where
-    C: 'static,
+    C: <LIFETIME>'static</LIFETIME>,
 {
-     let <MUTABLE></MUTABLE> unerased = e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <ContextError lifetime <C, Error>>>().deref();
-    if TypeId::of:: <LIFETIME></LIFETIME> <C>() == target {
-        Some(Ref::new( & <MUTABLE></MUTABLE> unerased._object.context).cast:: <LIFETIME></LIFETIME> <()>())
+    let <MUTABLE></MUTABLE> unerased = e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, Error>>>().deref();
+    if TypeId::of::<LIFETIME></LIFETIME><C>() == target {
+        Some(Ref::new(&unerased._object.context).cast::<LIFETIME></LIFETIME><()>())
     } else {
-        // Recurse down the context chain per the inner error's vtable.
-         let <MUTABLE></MUTABLE> source =  & <MUTABLE></MUTABLE> unerased._object.error;
+        
+        let <MUTABLE></MUTABLE> source = &unerased._object.error;
         (vtable(source.inner.ptr).object_downcast)(source.inner.by_ref(), target)
     }
 }
 
-// Safety: requires layout of *e to match ErrorImpl<ContextError<C, Error>>.
+
 #[cfg(anyhow_no_ptr_addr_of)]
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn context_chain_downcast_mut<C>( e: <MUTABLE></MUTABLE> Mut <LIFETIME></LIFETIME> <ErrorImpl>,  target: <MUTABLE></MUTABLE> TypeId) -> Option lifetime <Mut lifetime <()>>
+<SAFENESS>unsafe</SAFENESS> fn context_chain_downcast_mut<C>(<MUTABLE></MUTABLE>e: Mut<LIFETIME></LIFETIME><ErrorImpl>, <MUTABLE></MUTABLE>target: TypeId) -> Option<LIFETIME></LIFETIME><Mut<LIFETIME></LIFETIME><()>>
 where
-    C: 'static,
+    C: <LIFETIME>'static</LIFETIME>,
 {
-     let <MUTABLE></MUTABLE> unerased = e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <ContextError lifetime <C, Error>>>().deref_mut();
-    if TypeId::of:: <LIFETIME></LIFETIME> <C>() == target {
-        Some(Mut::new( & <MUTABLE>mut</MUTABLE> unerased._object.context).cast:: <LIFETIME></LIFETIME> <()>())
+    let <MUTABLE></MUTABLE> unerased = e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, Error>>>().deref_mut();
+    if TypeId::of::<LIFETIME></LIFETIME><C>() == target {
+        Some(Mut::new(&<MUTABLE>mut</MUTABLE> unerased._object.context).cast::<LIFETIME></LIFETIME><()>())
     } else {
-        // Recurse down the context chain per the inner error's vtable.
-         let <MUTABLE></MUTABLE> source =  & <MUTABLE>mut</MUTABLE> unerased._object.error;
+        
+        let <MUTABLE></MUTABLE> source = &<MUTABLE>mut</MUTABLE> unerased._object.error;
         (vtable(source.inner.ptr).object_downcast_mut)(source.inner.by_mut(), target)
     }
 }
 
-// Safety: requires layout of *e to match ErrorImpl<ContextError<C, Error>>.
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn context_chain_drop_rest<C>( e: <MUTABLE></MUTABLE> Own <LIFETIME></LIFETIME> <ErrorImpl>,  target: <MUTABLE></MUTABLE> TypeId)
+
+<SAFENESS>unsafe</SAFENESS> fn context_chain_drop_rest<C>(<MUTABLE></MUTABLE>e: Own<LIFETIME></LIFETIME><ErrorImpl>, <MUTABLE></MUTABLE>target: TypeId)
 where
-    C: 'static,
+    C: <LIFETIME>'static</LIFETIME>,
 {
-    // Called after downcasting by value to either the C or one of the causes
-    // and doing a ptr::read to take ownership of that value.
-    if TypeId::of:: <LIFETIME></LIFETIME> <C>() == target {
-         let <MUTABLE></MUTABLE> unerased = e
-            .cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <ContextError lifetime <ManuallyDrop lifetime <C>, Error>>>()
+    
+    
+    if TypeId::of::<LIFETIME></LIFETIME><C>() == target {
+        let <MUTABLE></MUTABLE> unerased = e
+            .cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><ManuallyDrop<LIFETIME></LIFETIME><C>, Error>>>()
             .boxed();
-        // Drop the entire rest of the data structure rooted in the next Error.
+        
         drop(unerased);
     } else {
-         let <MUTABLE></MUTABLE> unerased = e
-            .cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <ContextError lifetime <C, ManuallyDrop lifetime <Error>>>>()
+        let <MUTABLE></MUTABLE> unerased = e
+            .cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, ManuallyDrop<LIFETIME></LIFETIME><Error>>>>()
             .boxed();
-        // Read the Own<ErrorImpl> from the next error.
-         let <MUTABLE></MUTABLE> inner = unerased._object.error.inner;
+        
+        let <MUTABLE></MUTABLE> inner = unerased._object.error.inner;
         drop(unerased);
-         let <MUTABLE></MUTABLE> vtable = vtable(inner.ptr);
-        // Recursively drop the next error using the same target typeid.
+        let <MUTABLE></MUTABLE> vtable = vtable(inner.ptr);
+        
         (vtable.object_drop_rest)(inner, target);
     }
 }
 
-// Safety: requires layout of *e to match ErrorImpl<ContextError<C, Error>>.
+
 #[cfg(all(not(backtrace), feature = "backtrace"))]
 #[allow(clippy::unnecessary_wraps)]
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn context_backtrace<C>( e: <MUTABLE></MUTABLE> Ref <LIFETIME></LIFETIME> <ErrorImpl>) -> Option lifetime < lifetime  & <MUTABLE></MUTABLE> Backtrace>
+<SAFENESS>unsafe</SAFENESS> fn context_backtrace<C>(<MUTABLE></MUTABLE>e: Ref<LIFETIME></LIFETIME><ErrorImpl>) -> Option<LIFETIME></LIFETIME><<LIFETIME></LIFETIME>&Backtrace>
 where
-    C: 'static,
+    C: <LIFETIME>'static</LIFETIME>,
 {
-     let <MUTABLE></MUTABLE> unerased = e.cast:: <LIFETIME></LIFETIME> <ErrorImpl lifetime <ContextError lifetime <C, Error>>>().deref();
-     let <MUTABLE></MUTABLE> backtrace = ErrorImpl::backtrace(unerased._object.error.inner.by_ref());
+    let <MUTABLE></MUTABLE> unerased = e.cast::<LIFETIME></LIFETIME><ErrorImpl<LIFETIME></LIFETIME><ContextError<LIFETIME></LIFETIME><C, Error>>>().deref();
+    let <MUTABLE></MUTABLE> backtrace = ErrorImpl::backtrace(unerased._object.error.inner.by_ref());
     Some(backtrace)
 }
 
-// NOTE: If working with `ErrorImpl<()>`, references should be avoided in favor
-// of raw pointers and `NonNull`.
-// repr C to ensure that E remains in the final position.
+
+
+
 #[repr(C)]
 pub(crate) struct ErrorImpl<E = ()> {
-    vtable:  <LIFETIME>static</LIFETIME>  & <MUTABLE></MUTABLE>  ErrorVTable,
-    backtrace: Option <LIFETIME></LIFETIME> <Backtrace>,
-    // NOTE: Don't use directly. Use only through vtable. Erased type may have
-    // different alignment.
+    vtable: <LIFETIME></LIFETIME>&<LIFETIME>'static</LIFETIME> ErrorVTable,
+    backtrace: Option<LIFETIME></LIFETIME><Backtrace>,
+    
+    
     _object: E,
 }
 
-// Reads the vtable out of `p`. This is the same as `p.as_ref().vtable`, but
-// avoids converting `p` into a reference.
-<SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn vtable( p: <MUTABLE></MUTABLE> NonNull <LIFETIME>static</LIFETIME> <ErrorImpl>) ->  <LIFETIME></LIFETIME>  & <MUTABLE></MUTABLE>  ErrorVTable {
-    // NOTE: This assumes that `ErrorVTable` is the first field of ErrorImpl.
-    *(p.as_ptr() as  * <MUTABLE></MUTABLE> const  <LIFETIME>static</LIFETIME>  & <MUTABLE></MUTABLE>  ErrorVTable)
+
+
+<SAFENESS>unsafe</SAFENESS> fn vtable(<MUTABLE></MUTABLE>p: NonNull<LIFETIME></LIFETIME><ErrorImpl>) -> <LIFETIME></LIFETIME>&<LIFETIME>'static</LIFETIME> ErrorVTable {
+    
+    *(p.as_ptr() as *const <LIFETIME></LIFETIME>&<LIFETIME>'static</LIFETIME> ErrorVTable)
 }
 
-// repr C to ensure that ContextError<C, E> has the same layout as
-// ContextError<ManuallyDrop<C>, E> and ContextError<C, ManuallyDrop<E>>.
+
+
 #[repr(C)]
 pub(crate) struct ContextError<C, E> {
     pub context: C,
     pub error: E,
 }
 
-<SAFENESS></SAFENESS> impl<E> ErrorImpl <LIFETIME></LIFETIME> <E> {
-    <SAFENESS></SAFENESS> fn erase( & <MUTABLE></MUTABLE> self) -> Ref <LIFETIME></LIFETIME> <ErrorImpl> {
-        // Erase the concrete type of E but preserve the vtable in self.vtable
-        // for manipulating the resulting thin pointer. This is analogous to an
-        // unsize coercion.
-        Ref::new(self).cast:: <LIFETIME></LIFETIME> <ErrorImpl>()
+<SAFENESS></SAFENESS>impl<E> ErrorImpl<LIFETIME></LIFETIME><E> {
+    <SAFENESS></SAFENESS>fn erase(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self) -> Ref<LIFETIME></LIFETIME><ErrorImpl> {
+        
+        
+        
+        Ref::new(self).cast::<LIFETIME></LIFETIME><ErrorImpl>()
     }
 }
 
-<SAFENESS></SAFENESS> impl ErrorImpl {
-    pub(crate) <SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn error( this: <MUTABLE></MUTABLE> Ref <LIFETIME>static</LIFETIME> <Self>) ->  <LIFETIME></LIFETIME>  & <MUTABLE></MUTABLE> (dyn StdError + Send + Sync) {
-        // Use vtable to attach E's native StdError vtable for the right
-        // original type E.
+<SAFENESS></SAFENESS>impl ErrorImpl {
+    pub(crate) <SAFENESS>unsafe</SAFENESS> fn error(<MUTABLE></MUTABLE>this: Ref<LIFETIME></LIFETIME><Self>) -> <LIFETIME></LIFETIME>&(dyn StdError + Send + Sync <LIFETIME>'static</LIFETIME>) {
+        
+        
         (vtable(this.ptr).object_ref)(this).deref()
     }
 
     #[cfg(feature = "std")]
-    pub(crate) <SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn error_mut( this: <MUTABLE></MUTABLE> Mut <LIFETIME>static</LIFETIME> <Self>) ->  <LIFETIME></LIFETIME>  & <MUTABLE>mut</MUTABLE> (dyn StdError + Send + Sync) {
-        // Use vtable to attach E's native StdError vtable for the right
-        // original type E.
+    pub(crate) <SAFENESS>unsafe</SAFENESS> fn error_mut(<MUTABLE></MUTABLE>this: Mut<LIFETIME></LIFETIME><Self>) -> <LIFETIME></LIFETIME>&<MUTABLE>mut</MUTABLE> (dyn StdError + Send + Sync <LIFETIME>'static</LIFETIME>) {
+        
+        
 
         #[cfg(not(anyhow_no_ptr_addr_of))]
         return (vtable(this.ptr).object_ref)(this.by_ref())
@@ -877,10 +877,10 @@ pub(crate) struct ContextError<C, E> {
     }
 
     #[cfg(any(backtrace, feature = "backtrace"))]
-    pub(crate) <SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn backtrace( this: <MUTABLE></MUTABLE> Ref <LIFETIME></LIFETIME> <Self>) ->  lifetime  & <MUTABLE></MUTABLE> Backtrace {
-        // This unwrap can only panic if the underlying error's backtrace method
-        // is nondeterministic, which would only happen in maliciously
-        // constructed code.
+    pub(crate) <SAFENESS>unsafe</SAFENESS> fn backtrace(<MUTABLE></MUTABLE>this: Ref<LIFETIME></LIFETIME><Self>) -> <LIFETIME></LIFETIME>&Backtrace {
+        
+        
+        
         this.deref()
             .backtrace
             .as_ref()
@@ -894,77 +894,78 @@ pub(crate) struct ContextError<C, E> {
     }
 
     #[cold]
-    pub(crate) <SAFENESS></SAFENESS> <SAFENESS>unsafe</SAFENESS> fn chain( this: <MUTABLE></MUTABLE> Ref <LIFETIME></LIFETIME> <Self>) -> Chain {
+    pub(crate) <SAFENESS>unsafe</SAFENESS> fn chain(<MUTABLE></MUTABLE>this: Ref<LIFETIME></LIFETIME><Self>) -> Chain {
         Chain::new(Self::error(this))
     }
 }
 
-<SAFENESS></SAFENESS> impl<E> StdError for ErrorImpl <LIFETIME></LIFETIME> <E>
+<SAFENESS></SAFENESS>impl<E> StdError for ErrorImpl<LIFETIME></LIFETIME><E>
 where
     E: StdError,
 {
     #[cfg(backtrace)]
-    <SAFENESS></SAFENESS> fn backtrace( & <MUTABLE></MUTABLE> self) -> Option <LIFETIME></LIFETIME> < lifetime  & <MUTABLE></MUTABLE> Backtrace> {
-        Some<SAFENESS>(<SAFENESS>unsafe</SAFENESS> { ErrorImpl::backtrace(self.erase()) })
+    <SAFENESS></SAFENESS>fn backtrace(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self) -> Option<LIFETIME></LIFETIME><<LIFETIME></LIFETIME>&Backtrace> {
+        Some(<SAFENESS>unsafe</SAFENESS> { ErrorImpl::backtrace(self.erase()) })
     }
 
-    <SAFENESS></SAFENESS> fn source( & <MUTABLE></MUTABLE> self) -> Option <LIFETIME>static</LIFETIME> < <LIFETIME></LIFETIME>  & <MUTABLE></MUTABLE> (dyn StdError)> {
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { ErrorImpl::error(self.erase()).source() }
+    <SAFENESS></SAFENESS>fn source(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self) -> Option<LIFETIME></LIFETIME><<LIFETIME></LIFETIME>&(dyn StdError <LIFETIME>'static</LIFETIME>)> {
+        <SAFENESS>unsafe</SAFENESS> { ErrorImpl::error(self.erase()).source() }
     }
 }
 
-<SAFENESS></SAFENESS> impl<E> Debug for ErrorImpl <LIFETIME></LIFETIME> <E>
+<SAFENESS></SAFENESS>impl<E> Debug for ErrorImpl<LIFETIME></LIFETIME><E>
 where
     E: Debug,
 {
-    <SAFENESS></SAFENESS> fn fmt( & self,  <MUTABLE></MUTABLE> formatter: <MUTABLE></MUTABLE>  <LIFETIME></LIFETIME>  & <MUTABLE>mut</MUTABLE> fmt::Formatter) -> fmt::Result {
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { ErrorImpl::debug(self.erase(), formatter) }
+    <SAFENESS></SAFENESS>fn fmt(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self, <MUTABLE></MUTABLE>formatter: <LIFETIME></LIFETIME>&<MUTABLE>mut</MUTABLE> fmt::Formatter) -> fmt::Result {
+        <SAFENESS>unsafe</SAFENESS> { ErrorImpl::debug(self.erase(), formatter) }
     }
 }
 
-<SAFENESS></SAFENESS> impl<E> Display for ErrorImpl <LIFETIME></LIFETIME> <E>
+<SAFENESS></SAFENESS>impl<E> Display for ErrorImpl<LIFETIME></LIFETIME><E>
 where
     E: Display,
 {
-    <SAFENESS></SAFENESS> fn fmt( & self,  <MUTABLE></MUTABLE> formatter: <MUTABLE></MUTABLE>  <LIFETIME></LIFETIME>  & <MUTABLE>mut</MUTABLE> fmt::Formatter) -> fmt::Result {
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> { Display::fmt(ErrorImpl::error(self.erase()), formatter) }
+    <SAFENESS></SAFENESS>fn fmt(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self, <MUTABLE></MUTABLE>formatter: <LIFETIME></LIFETIME>&<MUTABLE>mut</MUTABLE> fmt::Formatter) -> fmt::Result {
+        <SAFENESS>unsafe</SAFENESS> { Display::fmt(ErrorImpl::error(self.erase()), formatter) }
     }
 }
 
-<SAFENESS></SAFENESS> impl From <LIFETIME>static</LIFETIME> <Error> for Box <LIFETIME></LIFETIME> <dyn StdError + Send + Sync> {
+<SAFENESS></SAFENESS>impl From<LIFETIME></LIFETIME><Error> for Box<LIFETIME></LIFETIME><dyn StdError + Send + Sync <LIFETIME>'static</LIFETIME>> {
     #[cold]
-    <SAFENESS></SAFENESS> fn from( error: <MUTABLE></MUTABLE> Error) -> Self {
-         let <MUTABLE></MUTABLE> outer = ManuallyDrop::new(error);
-       <SAFENESS> <SAFENESS>unsafe</SAFENESS> {
-            // Use vtable to attach ErrorImpl<E>'s native StdError vtable for
-            // the right original type E.
+    <SAFENESS></SAFENESS>fn from(<MUTABLE></MUTABLE>error: Error) -> Self {
+        let <MUTABLE></MUTABLE> outer = ManuallyDrop::new(error);
+        <SAFENESS>unsafe</SAFENESS> {
+            
+            
             (vtable(outer.inner.ptr).object_boxed)(outer.inner)
         }
     }
 }
 
-<SAFENESS></SAFENESS> impl From <LIFETIME>static</LIFETIME> <Error> for Box <LIFETIME></LIFETIME> <dyn StdError + Send> {
-    <SAFENESS></SAFENESS> fn from( error: <MUTABLE></MUTABLE> Error) -> Self {
-        Box:: <LIFETIME></LIFETIME> <dyn StdError + Send + Sync>::from(error)
+<SAFENESS></SAFENESS>impl From<LIFETIME></LIFETIME><Error> for Box<LIFETIME></LIFETIME><dyn StdError + Send <LIFETIME>'static</LIFETIME>> {
+    <SAFENESS></SAFENESS>fn from(<MUTABLE></MUTABLE>error: Error) -> Self {
+        Box::<LIFETIME></LIFETIME><dyn StdError + Send + Sync>::from(error)
     }
 }
 
-<SAFENESS></SAFENESS> impl From <LIFETIME>static</LIFETIME> <Error> for Box <LIFETIME></LIFETIME> <dyn StdError> {
-    <SAFENESS></SAFENESS> fn from( error: <MUTABLE></MUTABLE> Error) -> Self {
-        Box:: <LIFETIME></LIFETIME> <dyn StdError + Send + Sync>::from(error)
-    }
-}
-
-#[cfg(feature = "std")]
-<SAFENESS></SAFENESS> impl AsRef <LIFETIME></LIFETIME> <dyn StdError + Send + Sync> for Error {
-    <SAFENESS></SAFENESS> fn as_ref( & <MUTABLE></MUTABLE> self) ->  <LIFETIME>static</LIFETIME>  & <MUTABLE></MUTABLE> (dyn StdError + Send + Sync) {
-         & <MUTABLE></MUTABLE> **self
+<SAFENESS></SAFENESS>impl From<LIFETIME></LIFETIME><Error> for Box<LIFETIME></LIFETIME><dyn StdError <LIFETIME>'static</LIFETIME>> {
+    <SAFENESS></SAFENESS>fn from(<MUTABLE></MUTABLE>error: Error) -> Self {
+        Box::<LIFETIME></LIFETIME><dyn StdError + Send + Sync>::from(error)
     }
 }
 
 #[cfg(feature = "std")]
-<SAFENESS></SAFENESS> impl AsRef <LIFETIME></LIFETIME> <dyn StdError> for Error {
-    <SAFENESS></SAFENESS> fn as_ref( & <MUTABLE></MUTABLE> self) ->  <LIFETIME>static</LIFETIME>  & <MUTABLE></MUTABLE> (dyn StdError) {
-         & <MUTABLE></MUTABLE> **self
+<SAFENESS></SAFENESS>impl AsRef<LIFETIME></LIFETIME><dyn StdError + Send + Sync> for Error {
+    <SAFENESS></SAFENESS>fn as_ref(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self) -> <LIFETIME></LIFETIME>&(dyn StdError + Send + Sync <LIFETIME>'static</LIFETIME>) {
+        &**self
     }
 }
+
+#[cfg(feature = "std")]
+<SAFENESS></SAFENESS>impl AsRef<LIFETIME></LIFETIME><dyn StdError> for Error {
+    <SAFENESS></SAFENESS>fn as_ref(<MUTABLE></MUTABLE>&<MUTABLE></MUTABLE>self) -> <LIFETIME></LIFETIME>&(dyn StdError <LIFETIME>'static</LIFETIME>) {
+        &**self
+    }
+}
+

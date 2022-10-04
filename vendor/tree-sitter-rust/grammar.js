@@ -376,7 +376,8 @@ module.exports = grammar({
       // Not actual rust syntax, but made popular by the lazy_static crate.
       optional('ref'),
 
-      optional($.mutable_specifier),
+      field('mutable', optional($.mutable_specifier)),
+      // optional($.mutable_specifier),
       field('name', $.identifier),
       ':',
       field('type', $._type),
@@ -552,7 +553,8 @@ module.exports = grammar({
 
     let_declaration: $ => seq(
       'let',
-      optional($.mutable_specifier),
+      field('mutable', optional($.mutable_specifier)),
+      // optional($.mutable_specifier),
       field('pattern', $._pattern),
       optional(seq(
         ':',
@@ -624,14 +626,16 @@ module.exports = grammar({
     self_parameter: $ => seq(
       optional('&'),
       optional($.lifetime),
-      optional($.mutable_specifier),
+      field('mutable', optional($.mutable_specifier)),
+      // optional($.mutable_specifier),
       $.self
     ),
 
     variadic_parameter: $ => '...',
 
     parameter: $ => seq(
-      optional($.mutable_specifier),
+      field('mutable', optional($.mutable_specifier)),
+      // optional($.mutable_specifier),
       field('pattern', choice(
         $._pattern,
         $.self,
@@ -803,13 +807,15 @@ module.exports = grammar({
     reference_type: $ => seq(
       '&',
       optional($.lifetime),
-      optional($.mutable_specifier),
+      field('mutable', optional($.mutable_specifier)),
+      // optional($.mutable_specifier),
       field('type', $._type)
     ),
 
     pointer_type: $ => seq(
       '*',
-      choice('const', $.mutable_specifier),
+      field('mutable', choice('const', $.mutable_specifier)),
+      // choice('const', $.mutable_specifier),
       field('type', $._type)
     ),
 
@@ -951,7 +957,8 @@ module.exports = grammar({
 
     reference_expression: $ => prec(PREC.unary, seq(
       '&',
-      optional($.mutable_specifier),
+      field('mutable', $.mutable_specifier),
+      // optional($.mutable_specifier),
       field('value', $._expression)
     )),
 
@@ -1312,7 +1319,8 @@ module.exports = grammar({
 
     field_pattern: $ => seq(
       optional('ref'),
-      optional($.mutable_specifier),
+      field('mutable', $.mutable_specifier),
+      // optional($.mutable_specifier),
       choice(
         field('name', alias($.identifier, $.shorthand_field_identifier)),
         seq(
@@ -1355,7 +1363,8 @@ module.exports = grammar({
 
     reference_pattern: $ => seq(
       '&',
-      optional($.mutable_specifier),
+      field('mutable', $.mutable_specifier),
+      // optional($.mutable_specifier),
       $._pattern
     ),
 

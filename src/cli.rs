@@ -1,6 +1,6 @@
-use tree_grepper::extractor::Extractor;
+use crate::extractor::Extractor;
 use crate::extractor_chooser::ExtractorChooser;
-use tree_grepper::language::Language;
+use crate::language::Language;
 use anyhow::{bail, Context, Error, Result};
 use clap::{crate_authors, crate_version, App, Arg, ArgMatches};
 use itertools::Itertools;

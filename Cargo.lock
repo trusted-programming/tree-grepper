@@ -559,24 +559,6 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "tree-grepper-dynamic",
- "tree-sitter",
-]
-
-[[package]]
-name = "tree-grepper-dynamic"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bump_alloc",
- "clap",
- "crossbeam",
- "ignore",
- "itertools",
- "rayon",
- "regex",
- "serde",
- "serde_json",
  "tree-sitter",
 ]
 

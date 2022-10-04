@@ -251,3 +251,4 @@ sed -ie "s#mutable \([^:]*\): #\1: mutable #g" $1.1
 sed -ie "s#mutable mut#mut#g" $1.1
 sed -ie "s#mut #<MUTABLE>mut</MUTABLE> #g" $1.1
 sed -ie "s#mutable #<MUTABLE></MUTABLE> #g" $1.1
+# target/debug/tree-grepper -q rust '(source_file)' $1 > $1.1

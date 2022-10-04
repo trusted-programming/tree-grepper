@@ -1,4 +1,4 @@
-use tree_grepper::extractor::Extractor;
+use crate::extractor::Extractor;
 use anyhow::{bail, Context, Result};
 use ignore::types::{Types, TypesBuilder};
 use ignore::DirEntry;

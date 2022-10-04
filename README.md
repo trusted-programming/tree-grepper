@@ -11,8 +11,10 @@ tree-sitter generate
 tree-sitter parse ../../examples/error.rs
 cd ../..
 cargo build
-./mask.sh examples/error.rs
+./m.sh examples/error.rs
 ```
+
+The `error.rs` file contains the marked up sequence.
 
 ## Installing
 
