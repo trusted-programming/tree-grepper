@@ -22,6 +22,35 @@
 # - Introduce `function_modifiers` field so that it is possible to use the negate field feature in a tree-sitter query
 # - Update the `Cargo.toml` dependencies of tree-sitter to 0.20.9 so that the vendor generated ABI is compatible with the `tree-sitter-cli` command
 #
+# To be consistent with the convention of CodeBERT, we need to mark the following Rust code:
+
+# ```rust
+# let mut num = 5; 
+
+# let r1 = &num as *const i32; 
+# let r2 = &mut num as *mut i32;
+
+# unsafe { 
+#     println!("r1 is: {}", *r1); 
+#     println!("r2 is: {}", *r2); 
+# }
+# ```
+# 
+# as such:
+# 
+# ```rust
+# let <MUTABLE>mut</MUTABLE> num = 5; 
+
+# let r1 = &num as * <MUTABLE></MUTABLE>const i32; 
+# let r2 = & <MUTABLE>mut</MUTABLE> num as *<MUTABLE>mut</MUTABLE> i32;
+
+# <SAFENESS>unsafe</SAFENESS> { 
+#     println!("r1 is: {}", *r1); 
+#     println!("r2 is: {}", *r2); 
+# }
+# ```
+# where the masks are introduced by XML markup elements.
+#
 
 function extract() {
 	rm -f t.t
@@ -127,7 +156,7 @@ END {
 		  s_b = 0 + sorted_unsafe_blocks[i_ub + 1];
 		  e_b = 0 + unsafe_blocks[s_b];
 		  if (s_b <= b && b <= e_b) {
-			  printf("safeness") > file1;
+			  printf("<SAFENESS>") > file1;
 			  printf("0\n") > file2;
 			  i_ub++;
 		  }
@@ -210,7 +239,15 @@ END {
 ' 
 }
 extract $1 
-sed -ie 's/unsafe //g' $1.1
-sed -ie "s/ + '[a-z]*//g" $1.1
-sed -ie "s/'[a-z]*//g" $1.1
-sed -ie "s/mut //g" $1.1
+sed -ie 's#unsafe #<SAFENESS>unsafe</SAFENESS> #g' $1.1
+sed -ie "s#lifetime \(.*\) + '\([a-z]*\)#<LIFETIME>\2</LIFETIME> \1#g" $1.1
+sed -ie "s#lifetime \(.*\)'\([a-z]*\)#<LIFETIME>\2</LIFETIME> \1#g" $1.1
+sed -ie "s#lifetime \(.*\)#<LIFETIME></LIFETIME> \1#g" $1.1
+sed -ie "s#\(.*\):\(.*\)+ '\([a-z]*\)#\1:<LIFETIME>\3</LIFETIME>\2#g" $1.1
+sed -ie "s#safeness \(.*\)#<SAFENESS></SAFENESS> \1#g" $1.1
+sed -ie "s#mutable let #let mutable #g" $1.1
+sed -ie "s#mutable \([*&]\)#\1 mutable #g" $1.1
+sed -ie "s#mutable \([^:]*\): #\1: mutable #g" $1.1
+sed -ie "s#mutable mut#mut#g" $1.1
+sed -ie "s#mut #<MUTABLE>mut</MUTABLE> #g" $1.1
+sed -ie "s#mutable #<MUTABLE></MUTABLE> #g" $1.1

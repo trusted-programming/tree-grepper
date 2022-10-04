@@ -1,12 +1,15 @@
 mod cli;
-mod extractor;
+//mod extractor;
 mod extractor_chooser;
-mod language;
+//mod language;
+
+pub use tree_grepper::extractor::*;
+pub use tree_grepper::language::*;
 
 use anyhow::{bail, Context, Result};
 use cli::{Invocation, QueryFormat, QueryOpts};
 use crossbeam::channel;
-use language::Language;
+use tree_grepper::language::Language;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::env;
 use std::io::{self, BufWriter, Write};
@@ -94,7 +97,7 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
             Ok(Some(extraction)) => Some(Ok(extraction)),
             Err(err) => Some(Err(err)),
         })
-        .collect::<Result<Vec<extractor::ExtractedFile>>>()
+        .collect::<Result<Vec<tree_grepper::extractor::ExtractedFile>>>()
         .context("couldn't extract matches from files")?;
 
     if opts.sort {
@@ -103,9 +106,9 @@ fn do_query(opts: QueryOpts, mut out: impl Write) -> Result<()> {
 
     match opts.format {
         QueryFormat::Lines => {
-            for extracted_file in extracted_files {
-                write!(out, "{}", extracted_file).context("could not write lines")?;
-            }
+            // for extracted_file in extracted_files {
+            //     write!(out, "{}", extracted_file).context("could not write lines")?;
+            // }
         }
 
         QueryFormat::Json => {
