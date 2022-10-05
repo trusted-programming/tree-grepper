@@ -553,8 +553,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "tree-grepper"
-version = "2.3.0"
+name = "tree-patcher"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "bump_alloc",

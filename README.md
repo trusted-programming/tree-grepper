@@ -8,7 +8,6 @@ Works like `grep`, but uses `tree-sitter` to search for structure instead of str
 Install from Git repository
 ```bash
 cargo install --git https://github.com/yijunyu/tree-grepper --branch patcher
-mv ~/.cargo/bin/tree-grepper ~/.cargo/bin/tree-patcher
 tree-patcher ~/.cargo/registry/src/github.com-*/anyhow-*/src/error.rs
 ```
 
@@ -22,7 +21,11 @@ cargo build
 target/debug/tree-patcher examples/error.rs
 ```
 
-The `error.rs` file contains the marked up sequence.
+The `error.rs.1` file contains the marked up sequence.
+
+## Usage
+
+tokei --files --output=json | jq -r '.["Rust"].reports[].name' | xargs tree-patcher -q rust "(source_file)" 
 
 ## Installing
 

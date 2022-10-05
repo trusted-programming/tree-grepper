@@ -41,7 +41,7 @@ impl Invocation {
         // Check
         // https://users.rust-lang.org/t/grep-like-argument-parsing-with-clap/63392
         // for where I asked about this in public.
-        let matches = App::new("tree-grepper")
+        let matches = App::new("tree-patcher")
             .version(crate_version!())
             .author(crate_authors!())
             .arg(
@@ -53,6 +53,7 @@ impl Invocation {
                         "a language and query to perform (at least one is required.) See https://tree-sitter.github.io for information on writing queries. Run tree-grepper --languages for a list of languages.",
                     )
                     .number_of_values(2)
+                    .default_values(&["rust", "(source_file)"])
                     .value_names(&["LANGUAGE", "QUERY"])
                     .required_unless_present("languages")
                     .multiple_values(true)
