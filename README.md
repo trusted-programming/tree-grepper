@@ -25,7 +25,9 @@ The `error.rs.1` file contains the marked up sequence.
 
 ## Usage
 
-tokei --files --output=json | jq -r '.["Rust"].reports[].name' | xargs tree-patcher -q rust "(source_file)" 
+```bash
+tokei --files --output=json | jq -r '.["Rust"].reports[].name' | xargs tree-patcher
+```
 
 ## Installing
 
