@@ -52,11 +52,12 @@ impl Invocation {
                     .long_help(
                         "a language and query to perform (at least one is required.) See https://tree-sitter.github.io for information on writing queries. Run tree-grepper --languages for a list of languages.",
                     )
-                    .number_of_values(2)
+                    .required(false)
                     .default_values(&["rust", "(source_file)"])
+                    .number_of_values(2)
                     .value_names(&["LANGUAGE", "QUERY"])
-                    .required_unless_present("languages")
                     .multiple_values(true)
+                    // .required_unless_present("languages")
             )
             .arg(
                 Arg::new("no-gitignore")
