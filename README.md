@@ -5,6 +5,14 @@ Works like `grep`, but uses `tree-sitter` to search for structure instead of str
 
 ## Update
 
+Install from Git repository
+```bash
+cargo install --git https://github.com/yijunyu/tree-grepper --branch patcher
+mv ~/.cargo/bin/tree-grepper ~/.cargo/bin/tree-patcher
+tree-patcher ~/.cargo/registry/src/github.com-*/anyhow-*/src/error.rs
+```
+
+Install after checking out the Git repository
 ```bash
 cd vendor/tree-sitter-rust
 tree-sitter generate

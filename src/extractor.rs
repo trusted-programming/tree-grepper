@@ -7,6 +7,7 @@ use std::fmt::{self, Display};
 use std::fs;
 use std::path::{Path, PathBuf};
 use tree_sitter::{Parser, Point, QueryCursor};
+use sedregex::{find_and_replace};
 
 #[derive(Debug)]
 pub struct Extractor {
@@ -240,6 +241,16 @@ fn markup(
             output.push(*c);
         }
     }
+    let out = String::from_utf8(output).unwrap();
+    let mut alphabet: String = "".to_string();
+    alphabet.push_str(&find_and_replace(&out, &[
+        r"s/\+ <LIFETIME>\('.*\)<\/LIFETIME>/<LIFETIME>\1<\/LIFETIME>/g",
+        r"s/<MUTABLE><\/MUTABLE>let /let <MUTABLE><\/MUTABLE> /g",
+        r"s/<MUTABLE><\/MUTABLE>&/&<MUTABLE><\/MUTABLE>/g",
+        r"s/<MUTABLE><\/MUTABLE>\* /\*<MUTABLE><\/MUTABLE> /g",
+        r"s/<MUTABLE><\/MUTABLE>:/:<MUTABLE><\/MUTABLE> /g",
+        ]).unwrap());
+    output = alphabet.into_bytes();
     Ok(output)
 }
 
