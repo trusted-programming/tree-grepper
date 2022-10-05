@@ -19,7 +19,7 @@ tree-sitter generate
 tree-sitter parse ../../examples/error.rs
 cd ../..
 cargo build
-./m.sh examples/error.rs
+target/debug/tree-patcher examples/error.rs
 ```
 
 The `error.rs` file contains the marked up sequence.
