@@ -2,38 +2,24 @@ use crate::language::Language;
 use anyhow::{Context, Result};
 use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
-use std::collections::HashSet;
+use std::collections::{HashMap};
 use std::fmt::{self, Display};
 use std::fs;
 use std::path::{Path, PathBuf};
-use tree_sitter::{Parser, Point, Query, QueryCursor};
+use tree_sitter::{Parser, Point, QueryCursor};
 
 #[derive(Debug)]
 pub struct Extractor {
     language: Language,
     ts_language: tree_sitter::Language,
-    query: Query,
-    captures: Vec<String>,
-    ignores: HashSet<usize>,
 }
 
 impl Extractor {
-    pub fn new(language: Language, query: Query) -> Extractor {
-        let captures = query.capture_names().to_vec();
-
-        let mut ignores = HashSet::default();
-        captures.iter().enumerate().for_each(|(i, name)| {
-            if name.starts_with('_') {
-                ignores.insert(i);
-            }
-        });
+    pub fn new(language: Language) -> Extractor {
 
         Extractor {
             ts_language: (&language).language(),
             language,
-            query,
-            captures,
-            ignores,
         }
     }
 
@@ -47,10 +33,76 @@ impl Extractor {
         parser: &mut Parser,
     ) -> Result<Option<ExtractedFile>> {
         let source = fs::read(&path).context("could not read file")?;
-        let source_with_unsafe = markup_unsafe(parser, self.ts_language, &source)?;
-        println!("{}", std::str::from_utf8(&source_with_unsafe).unwrap());
+        let sources = splitup(parser, self.ts_language, &source).ok().unwrap();
+        for (file, m) in sources.iter() {
+            let src = *m;
+            let source_marked_up = markup(parser, self.ts_language, src)?;
+            let file_name = path
+                .parent()
+                .unwrap()
+                .join(path.file_stem().unwrap())
+                .join(format!("{}.rs.1", file));
+            if !file_name.parent().unwrap().exists() {
+                std::fs::create_dir(&file_name.parent().unwrap())?;
+            }
+            std::fs::write(&file_name, std::str::from_utf8(&source_marked_up).unwrap())?;
+            // println!("{:?}", &file_name);
+        }
         Ok(None)
     }
+}
+
+// Split source code by functions into a HashMap
+
+fn splitup<'a>(
+    parser: &mut Parser,
+    ts_language: tree_sitter::Language,
+    source: &'a [u8],
+) -> Result<HashMap<usize, &'a [u8]>> {
+    parser
+        .set_language(ts_language)
+        .context("could not set language")?;
+    let tree = parser
+        .parse(&source, None)
+        .context("could not parse to a tree. This is an internal error and should be reported.")?;
+    let query = Language::Rust
+        .parse_query(
+            "([
+                (function_item) @fn
+                (type_item) @fn
+                (enum_item) @fn
+                (union_item) @fn
+                (struct_item) @fn
+                (impl_item) @fn
+                (trait_item) @fn 
+                (static_item) @fn 
+            ])",
+        )
+        .unwrap();
+    let captures = query.capture_names().to_vec();
+    // let captures = query.capture_names().to_vec();
+    let mut cursor = QueryCursor::new();
+    let extracted = cursor
+        .matches(&query, tree.root_node(), source)
+        .flat_map(|query_match| query_match.captures)
+        .map(|capture| {
+            let name = &captures[capture.index as usize];
+            let node = capture.node;
+            Ok(ExtractedNode {
+                name: name,
+                start_byte: node.start_byte(),
+                end_byte: node.end_byte(),
+            })
+        })
+        .collect::<Result<Vec<ExtractedNode>>>()?;
+    let mut output: HashMap<usize, &[u8]> = HashMap::new();
+    for m in extracted {
+        if m.name == "fn" {
+            let code = std::str::from_utf8(&source[m.start_byte..m.end_byte]).unwrap();
+            output.insert(m.start_byte, code.as_bytes());
+        }
+    }
+    Ok(output)
 }
 
 // First remove all comments in Rust code by checking whether a character is within the specified
@@ -72,7 +124,7 @@ impl Extractor {
 // self_parameter, parameter, pointer_type, reference_expression, field_pattern, mut_pattern,
 // reference_pattern,
 //
-fn markup_unsafe(
+fn markup(
     parser: &mut Parser,
     ts_language: tree_sitter::Language,
     source: &[u8],
@@ -80,7 +132,7 @@ fn markup_unsafe(
     parser
         .set_language(ts_language)
         .context("could not set language")?;
-    let mut tree = parser
+    let tree = parser
         .parse(&source, None)
         .context("could not parse to a tree. This is an internal error and should be reported.")?;
     let query = Language::Rust
@@ -116,14 +168,6 @@ fn markup_unsafe(
         .map(|capture| {
             let name = &captures[capture.index as usize];
             let node = capture.node;
-            let text = match node
-                .utf8_text(source)
-                .map(|unowned| unowned.to_string())
-                .context("could not extract text from capture")
-            {
-                Ok(text) => text,
-                Err(problem) => return Err(problem),
-            };
             Ok(ExtractedNode {
                 name: name,
                 start_byte: node.start_byte(),
@@ -158,13 +202,15 @@ fn markup_unsafe(
             if m.start_byte <= i && i < m.end_byte && m.name == "lt" {
                 found = true;
                 if i == m.start_byte {
+                    let lifetime = std::str::from_utf8(&source[m.start_byte..m.end_byte]).unwrap();
                     output.extend(
                         format!(
                             "<LIFETIME>{}</LIFETIME>",
-                            std::str::from_utf8(&source[m.start_byte..m.end_byte]).unwrap()
+                            lifetime
                         )
                         .as_bytes(),
                     );
+                    println!("{}", lifetime);
                 }
             }
             if m.start_byte == i && m.name == "ref" {
@@ -190,7 +236,6 @@ fn markup_unsafe(
                 output.extend("<MUTABLE></MUTABLE>".to_string().as_bytes());
             }
         }
-        let buf: &mut [u8] = &mut [0];
         if !found {
             output.push(*c);
         }

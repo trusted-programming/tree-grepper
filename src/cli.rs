@@ -146,12 +146,8 @@ impl Invocation {
         }
 
         let mut out = Vec::with_capacity(query_strings.len());
-        for (lang, raw_query) in query_strings {
-            let query = lang
-                .parse_query(&raw_query)
-                .context("could not parse combined query")?;
-
-            out.push(Extractor::new(lang, query))
+        for (lang, _raw_query) in query_strings {
+            out.push(Extractor::new(lang))
         }
 
         Ok(out)
