@@ -1,2 +1,14 @@
 /result
 /target
+.vscode/
+build/
+examples/error/
+examples/insertion/
+src/cli/
+src/extractor/
+src/extractor_chooser/
+src/files/
+src/language/
+src/main/
+vendor/tree-sitter-rust/bindings/rust/lib/
+vocabulary.txt
