@@ -1,13 +1,14 @@
 use crate::language::Language;
 use anyhow::{Context, Result};
+use sedregex::find_and_replace;
 use serde::ser::{SerializeStruct, Serializer};
 use serde::Serialize;
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use tree_sitter::{Parser, Point, QueryCursor};
-use sedregex::{find_and_replace};
 
 #[derive(Debug)]
 pub struct Extractor {
@@ -17,7 +18,6 @@ pub struct Extractor {
 
 impl Extractor {
     pub fn new(language: Language) -> Extractor {
-
         Extractor {
             ts_language: (&language).language(),
             language,
@@ -47,7 +47,6 @@ impl Extractor {
                 std::fs::create_dir(&file_name.parent().unwrap())?;
             }
             std::fs::write(&file_name, std::str::from_utf8(&source_marked_up).unwrap())?;
-            // println!("{:?}", &file_name);
         }
         Ok(None)
     }
@@ -81,7 +80,6 @@ fn splitup<'a>(
         )
         .unwrap();
     let captures = query.capture_names().to_vec();
-    // let captures = query.capture_names().to_vec();
     let mut cursor = QueryCursor::new();
     let extracted = cursor
         .matches(&query, tree.root_node(), source)
@@ -145,8 +143,16 @@ fn markup(
             (function_item ! function_modifiers) @safe 
             (safeness) @ub
             (function_item (block (block) @b))
-            (reference_type !lifetime) @ref 
-            (type_arguments !lifetime) @tref 
+            (trait_bounds (lifetime)) @tbounds2
+                (trait_bounds) @tbounds
+            (reference_type (lifetime)) @ref2
+                (reference_type) @ref 
+            (type_arguments (lifetime)) @targ2 
+                (type_arguments) @targ 
+            (struct_item (type_identifier) (type_parameters)) @si2
+                (struct_item (type_identifier) @tid !type_parameters) @si
+            (type_parameters (lifetime)) @tpara2
+                (type_parameters) @tpara
             (lifetime) @lt 
             (static_item !mutable) @mss 
             (let_declaration !mutable) @mss 
@@ -176,8 +182,20 @@ fn markup(
             })
         })
         .collect::<Result<Vec<ExtractedNode>>>()?;
+
+    let mut lifetime_table: HashMap<&str, u8> = HashMap::new();
+    for m in &extracted {
+        if m.name == "lt" {
+            let lifetime = std::str::from_utf8(&source[m.start_byte..m.end_byte]).unwrap();
+            if lifetime != "'static" && lifetime != "'_" && !lifetime_table.contains_key(lifetime) {
+                let l = lifetime_table.len();
+                lifetime_table.insert(lifetime, ('a' as u8) + (l as u8));
+            }
+        }
+    }
     let mut output = Vec::new();
     let mut enclosing_unsafe_block = 0;
+    let mut has_lifetime: HashMap<usize, bool> = HashMap::new();
     for (i, c) in source.iter().enumerate() {
         let mut found = false;
         for m in &extracted {
@@ -204,20 +222,47 @@ fn markup(
                 found = true;
                 if i == m.start_byte {
                     let lifetime = std::str::from_utf8(&source[m.start_byte..m.end_byte]).unwrap();
-                    output.extend(
-                        format!(
-                            "<LIFETIME>{}</LIFETIME>",
-                            lifetime
-                        )
-                        .as_bytes(),
-                    );
-                    println!("{}", lifetime);
+                    if lifetime != "'static" && lifetime != "'_" {
+                        let encode = lifetime_table[lifetime];
+                        output.extend(
+                            format!(
+                                "<LIFETIME>'{}</LIFETIME>",
+                                std::str::from_utf8(&[encode]).unwrap()
+                            )
+                            .as_bytes(),
+                        );
+                        std::io::stdout().write(&['\'' as u8, encode, '\n' as u8])?;
+                    } else {
+                        output.extend(format!("<LIFETIME>{}</LIFETIME>", lifetime).as_bytes());
+                        println!("{}", lifetime);
+                    }
                 }
             }
-            if m.start_byte == i && m.name == "ref" {
+            if m.end_byte == i
+                && (m.name == "tid" || m.name == "tbounds")
+                && (!has_lifetime.contains_key(&m.start_byte) || !has_lifetime[&m.start_byte])
+            {
                 output.extend("<LIFETIME></LIFETIME>".to_string().as_bytes());
             }
-            if m.start_byte == i && m.name == "tref" {
+            if m.start_byte + 1 == i
+                && m.name == "ref"
+                && (!has_lifetime.contains_key(&m.start_byte) || !has_lifetime[&m.start_byte])
+            {
+                output.extend("<LIFETIME></LIFETIME>".to_string().as_bytes());
+            }
+            if m.start_byte == i
+                && (m.name == "tpara2"
+                    || m.name == "targ2"
+                    || m.name == "ref2"
+                    || m.name == "si2"
+                    || m.name == "tbounds2")
+            {
+                has_lifetime.insert(m.start_byte, true);
+            }
+            if m.end_byte - 1 == i
+                && (m.name == "tpara" || m.name == "targ")
+                && (!has_lifetime.contains_key(&m.start_byte) || !has_lifetime[&m.start_byte])
+            {
                 output.extend("<LIFETIME></LIFETIME>".to_string().as_bytes());
             }
             // deal with ownership elements
@@ -243,13 +288,19 @@ fn markup(
     }
     let out = String::from_utf8(output).unwrap();
     let mut alphabet: String = "".to_string();
-    alphabet.push_str(&find_and_replace(&out, &[
-        r"s/\+ <LIFETIME>\('.*\)<\/LIFETIME>/<LIFETIME>\1<\/LIFETIME>/g",
-        r"s/<MUTABLE><\/MUTABLE>let /let <MUTABLE><\/MUTABLE> /g",
-        r"s/<MUTABLE><\/MUTABLE>&/&<MUTABLE><\/MUTABLE>/g",
-        r"s/<MUTABLE><\/MUTABLE>\* /\*<MUTABLE><\/MUTABLE> /g",
-        r"s/<MUTABLE><\/MUTABLE>:/:<MUTABLE><\/MUTABLE> /g",
-        ]).unwrap());
+    alphabet.push_str(
+        &find_and_replace(
+            &out,
+            &[
+                r"s/\+ <LIFETIME>/<LIFETIME>/g",
+                r"s/<MUTABLE><\/MUTABLE>let /let <MUTABLE><\/MUTABLE> /g",
+                r"s/<MUTABLE><\/MUTABLE>&/&<MUTABLE><\/MUTABLE>/g",
+                r"s/<MUTABLE><\/MUTABLE>\* /\*<MUTABLE><\/MUTABLE> /g",
+                r"s/<MUTABLE><\/MUTABLE>:/:<MUTABLE><\/MUTABLE> /g",
+            ],
+        )
+        .unwrap(),
+    );
     output = alphabet.into_bytes();
     Ok(output)
 }
@@ -317,4 +368,45 @@ where
     out.serialize_field("row", &(point.row + 1))?;
     out.serialize_field("column", &(point.column + 1))?;
     out.end()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn marker() {
+        let mut parser = Parser::new();
+        let language = Language::Rust.language();
+        insta::assert_snapshot!(std::str::from_utf8(&markup(&mut parser, language, "struct X { }".as_bytes()).ok().unwrap()).unwrap(), @"struct X<LIFETIME></LIFETIME> { }");
+        insta::assert_snapshot!(std::str::from_utf8(&markup(&mut parser, language, "struct X <'a> { }".as_bytes()).ok().unwrap()).unwrap(), @"struct X <<LIFETIME>'a</LIFETIME>> { }");
+        insta::assert_snapshot!(std::str::from_utf8(&markup(&mut parser, language, "struct X <'b, 'a> { }".as_bytes()).ok().unwrap()).unwrap(), @"struct X <<LIFETIME>'a</LIFETIME>, <LIFETIME>'b</LIFETIME>> { }");
+        insta::assert_snapshot!(std::str::from_utf8(&markup(&mut parser, language, "struct X <'a, 'b> { }".as_bytes()).ok().unwrap()).unwrap(), @"struct X <<LIFETIME>'a</LIFETIME>, <LIFETIME>'b</LIFETIME>> { }");
+        insta::assert_snapshot!(std::str::from_utf8(&markup(&mut parser, language, "struct ExtractedFile<'query> {
+            file: Option<PathBuf>,
+            file_type: String,
+            matches: Vec<ExtractedMatch<'query>>,
+        }".as_bytes()).ok().unwrap()).unwrap(), @r###"
+        struct ExtractedFile<<LIFETIME>'a</LIFETIME>> {
+                    file: Option<PathBuf<LIFETIME></LIFETIME>>,
+                    file_type: String,
+                    matches: Vec<ExtractedMatch<<LIFETIME>'a</LIFETIME>><LIFETIME></LIFETIME>>,
+                }
+        "###);
+        insta::assert_snapshot!(std::str::from_utf8(&markup(&mut parser, language, "pub fn new<E>(error: E) -> Self
+        where
+            E: StdError + Send + Sync + 'static,
+        {
+            let backtrace = backtrace_if_absent!(error);
+            Error::from_std(error, backtrace)
+        }".as_bytes()).ok().unwrap()).unwrap(), @r###"
+        pub fn new<E<LIFETIME></LIFETIME>>(<MUTABLE></MUTABLE>error: E) -> Self
+                where
+                    E: StdError + Send + Sync <LIFETIME>'static</LIFETIME>,
+                {
+                    let <MUTABLE></MUTABLE> backtrace = backtrace_if_absent!(error);
+                    Error::from_std(error, backtrace)
+                }
+        "###);
+    }
 }
