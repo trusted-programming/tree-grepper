@@ -6,7 +6,6 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::fmt::{self, Display};
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use tree_sitter::{Parser, Point, QueryCursor};
 
@@ -183,13 +182,22 @@ fn markup(
         })
         .collect::<Result<Vec<ExtractedNode>>>()?;
 
-    let mut lifetime_table: HashMap<&str, u8> = HashMap::new();
+    let mut lifetime_table: HashMap<&str, String> = HashMap::new();
     for m in &extracted {
         if m.name == "lt" {
             let lifetime = std::str::from_utf8(&source[m.start_byte..m.end_byte]).unwrap();
             if lifetime != "'static" && lifetime != "'_" && !lifetime_table.contains_key(lifetime) {
                 let l = lifetime_table.len();
-                lifetime_table.insert(lifetime, ('a' as u8) + (l as u8));
+                let lz = l / 26;
+                let mut z = "".to_string();
+                if lz > 0 {
+                    z.push('z');
+                }
+                let ch = 'a' as u8 + (l % 26) as u8;
+                let u8 = [ch];
+                let s = std::str::from_utf8(&u8).unwrap();
+                z.push_str(s);
+                lifetime_table.insert(lifetime, z.clone());
             }
         }
     }
@@ -223,15 +231,15 @@ fn markup(
                 if i == m.start_byte {
                     let lifetime = std::str::from_utf8(&source[m.start_byte..m.end_byte]).unwrap();
                     if lifetime != "'static" && lifetime != "'_" {
-                        let encode = lifetime_table[lifetime];
+                        let encode = &lifetime_table[lifetime];
                         output.extend(
                             format!(
                                 "<LIFETIME>'{}</LIFETIME>",
-                                std::str::from_utf8(&[encode]).unwrap()
+                                encode
                             )
                             .as_bytes(),
                         );
-                        std::io::stdout().write(&['\'' as u8, encode, '\n' as u8])?;
+                        println!("'{}", encode);                        
                     } else {
                         output.extend(format!("<LIFETIME>{}</LIFETIME>", lifetime).as_bytes());
                         println!("{}", lifetime);
@@ -382,6 +390,8 @@ mod tests {
         insta::assert_snapshot!(std::str::from_utf8(&markup(&mut parser, language, "struct X <'a> { }".as_bytes()).ok().unwrap()).unwrap(), @"struct X <<LIFETIME>'a</LIFETIME>> { }");
         insta::assert_snapshot!(std::str::from_utf8(&markup(&mut parser, language, "struct X <'b, 'a> { }".as_bytes()).ok().unwrap()).unwrap(), @"struct X <<LIFETIME>'a</LIFETIME>, <LIFETIME>'b</LIFETIME>> { }");
         insta::assert_snapshot!(std::str::from_utf8(&markup(&mut parser, language, "struct X <'a, 'b> { }".as_bytes()).ok().unwrap()).unwrap(), @"struct X <<LIFETIME>'a</LIFETIME>, <LIFETIME>'b</LIFETIME>> { }");
+        insta::assert_snapshot!(std::str::from_utf8(&markup(&mut parser, language, "struct X <'a,'b,'c,'d,'e,'f,'g,'h,'i,'j,'k,'l,'m,'n,'o,'p,'q,'r,'s,'t,'u,'v,'w,'x,'y,'z,'A,'B,'C,'D> { }".as_bytes()).ok().unwrap()).unwrap(), 
+        @"struct X <<LIFETIME>'a</LIFETIME>,<LIFETIME>'b</LIFETIME>,<LIFETIME>'c</LIFETIME>,<LIFETIME>'d</LIFETIME>,<LIFETIME>'e</LIFETIME>,<LIFETIME>'f</LIFETIME>,<LIFETIME>'g</LIFETIME>,<LIFETIME>'h</LIFETIME>,<LIFETIME>'i</LIFETIME>,<LIFETIME>'j</LIFETIME>,<LIFETIME>'k</LIFETIME>,<LIFETIME>'l</LIFETIME>,<LIFETIME>'m</LIFETIME>,<LIFETIME>'n</LIFETIME>,<LIFETIME>'o</LIFETIME>,<LIFETIME>'p</LIFETIME>,<LIFETIME>'q</LIFETIME>,<LIFETIME>'r</LIFETIME>,<LIFETIME>'s</LIFETIME>,<LIFETIME>'t</LIFETIME>,<LIFETIME>'u</LIFETIME>,<LIFETIME>'v</LIFETIME>,<LIFETIME>'w</LIFETIME>,<LIFETIME>'x</LIFETIME>,<LIFETIME>'y</LIFETIME>,<LIFETIME>'z</LIFETIME>,<LIFETIME>'za</LIFETIME>,<LIFETIME>'zb</LIFETIME>,<LIFETIME>'zc</LIFETIME>,<LIFETIME>'zd</LIFETIME>> { }");
         insta::assert_snapshot!(std::str::from_utf8(&markup(&mut parser, language, "struct ExtractedFile<'query> {
             file: Option<PathBuf>,
             file_type: String,
