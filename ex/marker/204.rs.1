@@ -1,7 +1,0 @@
-pub fn new<E<LIFETIME></LIFETIME>>(<MUTABLE></MUTABLE>error: E) -> Self
-        where
-            E: StdError + Send + Sync <LIFETIME>'static</LIFETIME>,
-        {
-            let <MUTABLE></MUTABLE> backtrace = backtrace_if_absent!(error);
-            Error::from_std(error, backtrace)
-        }
