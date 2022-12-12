@@ -35,11 +35,12 @@ impl Extractor {
         let sources = splitup_unsafe(parser, self.ts_language, &source).ok().unwrap();
         for (file, m) in sources.iter() {
             let src = *m;
+            let digest = md5::compute(&src);
             let file_name = path
                 .parent()
                 .unwrap()
                 .join(path.file_stem().unwrap())
-                .join(format!("{}.rs.unsafe", file));
+                .join(format!("{:x}.rs.unsafe", digest));
             if !file_name.parent().unwrap().exists() {
                 std::fs::create_dir(&file_name.parent().unwrap())?;
             }
@@ -47,18 +48,19 @@ impl Extractor {
         }
         let sources = splitup_all(parser, self.ts_language, &source).ok().unwrap();
         for (file, m) in sources.iter() {
+            let src = *m;
+            let digest = md5::compute(&src);
             let unsafe_file_name = path
                 .parent()
                 .unwrap()
                 .join(path.file_stem().unwrap())
-                .join(format!("{}.rs.unsafe", file));
+                .join(format!("{:x}.rs.unsafe", digest));
             if ! unsafe_file_name.exists() {
-                let src = *m;
                 let file_name = path
                     .parent()
                     .unwrap()
                     .join(path.file_stem().unwrap())
-                    .join(format!("{}.rs.safe", file));
+                    .join(format!("{:x}.rs.safe", digest));
                 if !file_name.parent().unwrap().exists() {
                     std::fs::create_dir(&file_name.parent().unwrap())?;
                 }
