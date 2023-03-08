@@ -1,0 +1,14 @@
+[package]
+name = "persistence"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+redis = {version = "0.22.3", optional = true}
+
+[features]
+default=["redis"]
+redis=["dep:redis"]

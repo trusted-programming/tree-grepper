@@ -17,7 +17,7 @@ pub struct Extractor {
 impl Extractor {
     pub fn new(language: Language) -> Extractor {
         Extractor {
-            ts_language: (&language).language(),
+            ts_language: language.language(),
             language,
         }
     }
@@ -31,25 +31,22 @@ impl Extractor {
         path: &Path,
         parser: &mut Parser,
     ) -> Result<Option<ExtractedFile>> {
-        let source = fs::read(&path).context("could not read file")?;
+        let source = fs::read(path).context("could not read file")?;
         let sources = splitup_unsafe(parser, self.ts_language, &source).ok().unwrap();
-        for (file, m) in sources.iter() {
+        for (_file, m) in sources.iter() {
             let src = *m;
-            let digest = md5::compute(&src);
+            let digest = md5::compute(src);
             let file_name = path
                 .parent()
                 .unwrap()
                 .join(path.file_stem().unwrap())
                 .join(format!("{:x}.rs.unsafe", digest));
-            if !file_name.parent().unwrap().exists() {
-                std::fs::create_dir(&file_name.parent().unwrap())?;
-            }
-            std::fs::write(&file_name, std::str::from_utf8(&src).unwrap())?;
+            let _ = persistence::persistence::put(file_name, std::str::from_utf8(src).unwrap());
         }
         let sources = splitup_all(parser, self.ts_language, &source).ok().unwrap();
-        for (file, m) in sources.iter() {
+        for (_file, m) in sources.iter() {
             let src = *m;
-            let digest = md5::compute(&src);
+            let digest = md5::compute(src);
             let unsafe_file_name = path
                 .parent()
                 .unwrap()
@@ -61,10 +58,7 @@ impl Extractor {
                     .unwrap()
                     .join(path.file_stem().unwrap())
                     .join(format!("{:x}.rs.safe", digest));
-                if !file_name.parent().unwrap().exists() {
-                    std::fs::create_dir(&file_name.parent().unwrap())?;
-                }
-                std::fs::write(&file_name, std::str::from_utf8(&src).unwrap())?;
+                let _ = persistence::persistence::put(file_name, std::str::from_utf8(src).unwrap());
             }
         }
  

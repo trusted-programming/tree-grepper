@@ -1,3 +1,8 @@
+[workspace]
+members = [
+   "components/*",
+]
+
 [package]
 name = "tree-marker"
 version = "0.1.0"
@@ -5,6 +10,7 @@ authors = ["Yijun Yu <y.yu@open.ac.uk>"]
 edition = "2021"
 
 [dependencies]
+persistence = { path = "components/persistence" }
 anyhow = "1.0.52"
 bump_alloc = "0.1.0"
 clap = { version = "3.0.9", features = [ "std", "color", "suggestions", "cargo" ] }
@@ -19,6 +25,11 @@ regex = "1.3.3"
 sedregex = "*"
 cap = "*"
 md5 = "0.7.0"
+redis = {version = "0.22.3", optional = true}
+
+[features]
+default=["redis"]
+redis=["dep:redis"]
 
 [dev-dependencies]
 insta = "1.10.0"
