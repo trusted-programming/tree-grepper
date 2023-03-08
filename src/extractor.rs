@@ -36,32 +36,25 @@ impl Extractor {
         for (_file, m) in sources.iter() {
             let src = *m;
             let digest = md5::compute(src);
-            let file_name = path
-                .parent()
-                .unwrap()
-                .join(path.file_stem().unwrap())
-                .join(format!("{:x}.rs.unsafe", digest));
+            let file_name = Path::new(format!("unsafe/{:x}.rs", digest).as_str()).to_path_buf();
+            let _ = persistence::persistence::put(Path::new(format!("{:x}", digest).as_str()).to_path_buf(), format!("{:?}", path).as_str());
             let _ = persistence::persistence::put(file_name, std::str::from_utf8(src).unwrap());
         }
         let sources = splitup_all(parser, self.ts_language, &source).ok().unwrap();
         for (_file, m) in sources.iter() {
             let src = *m;
             let digest = md5::compute(src);
-            let unsafe_file_name = path
-                .parent()
-                .unwrap()
-                .join(path.file_stem().unwrap())
-                .join(format!("{:x}.rs.unsafe", digest));
-            if ! unsafe_file_name.exists() {
-                let file_name = path
-                    .parent()
-                    .unwrap()
-                    .join(path.file_stem().unwrap())
-                    .join(format!("{:x}.rs.safe", digest));
-                let _ = persistence::persistence::put(file_name, std::str::from_utf8(src).unwrap());
+            let unsafe_file_name = Path::new(format!("unsafe/{:x}.rs", digest).as_str()).to_path_buf();
+            match persistence::persistence::get(unsafe_file_name) {
+                Ok(_) => {
+                }
+                Err(_) => {
+                            let file_name = Path::new(format!("safe/{:x}.rs", digest).as_str()).to_path_buf();
+                            let _ = persistence::persistence::put(Path::new(format!("{:x}", digest).as_str()).to_path_buf(), format!("{:?}", path).as_str());
+                            let _ = persistence::persistence::put(file_name, std::str::from_utf8(src).unwrap());
+                        }
             }
         }
- 
         Ok(None)
     }
 }
