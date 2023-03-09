@@ -8,7 +8,12 @@ path = "src/lib.rs"
 
 [dependencies]
 redis = {version = "0.22.3", optional = true}
+tikv-client = {version = "0.1", optional = true}
+tokio = { version = "1.5", features = ["full"], optional = true }
+futures = { version = "0.3", optional = true}
 
 [features]
-default=["redis"]
+#default=["redis"]
+default=["tikv"]
 redis=["dep:redis"]
+tikv=["dep:tikv-client", "dep:tokio", "dep:futures"]
