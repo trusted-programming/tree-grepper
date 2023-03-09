@@ -28,9 +28,12 @@ pub mod persistence {
     pub fn get(key: PathBuf) -> tikv_client::Result<String> {
         let v = async {
             let client = RawClient::new(vec!["127.0.0.1:2379"]).await?;
-            let value = client.get(format!("{:?}",key)).await?;
-            let v = String::from_utf8(value.unwrap()).unwrap();
-            Ok(v)
+            if let Some(value) = client.get(format!("{:?}",key)).await? {
+                let v = String::from_utf8(value).unwrap(); 
+                Ok(v)
+            } else {
+                Ok("".to_string())
+            }
         };
         block_on(v)
     }
