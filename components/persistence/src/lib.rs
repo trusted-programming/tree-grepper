@@ -17,6 +17,8 @@ pub mod persistence {
     use flate2::write::GzEncoder;
     use redis::Commands;
     use tar::{Builder, Header};
+    use indicatif::{ProgressBar, ProgressStyle};
+
     pub fn get(key: PathBuf) -> redis::RedisResult<String> {
         let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
         let key = format!("{namespace}{}", key.as_path().display());
@@ -63,6 +65,13 @@ pub mod persistence {
         if let Ok(client) = redis::Client::open("redis://127.0.0.1/") {
             if let Ok(mut con) = client.get_connection() {
                 let files: Vec<String> = con.keys(format!("{prefix}/*")).unwrap();
+                let pb = ProgressBar::new(files.len() as u64);
+                pb.set_style(
+                    ProgressStyle::default_bar()
+                        .template("{bar:40.cyan/blue} {percent}%")
+                        .progress_chars("##-"),
+                );
+                let mut i = 0;
                 files.iter().for_each(|file| {
                     if let Ok(contents) = get(PathBuf::from(file)) {
                         let contents = contents.as_bytes();
@@ -71,7 +80,10 @@ pub mod persistence {
                         header.set_cksum();
                         tar.append_data(&mut header, file, contents).unwrap();
                     }
+                    pb.set_position(i);
+                    i = i + 1;
                 });
+                pb.finish();
             }
         }
     }
