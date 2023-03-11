@@ -11,9 +11,12 @@ pub fn config(var: String, default: String) -> String {
 pub mod persistence {
     extern crate redis;
     use std::{path::PathBuf, fs::File};
-    use std::io::prelude::*;
+    use std::io::{prelude::*, BufWriter};
 
+    use flate2::Compression;
+    use flate2::write::GzEncoder;
     use redis::Commands;
+    use tar::{Builder, Header, EntryType};
     pub fn get(key: PathBuf) -> redis::RedisResult<String> {
         let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
         let key = format!("{namespace}{}", key.as_path().display());
@@ -50,6 +53,26 @@ pub mod persistence {
             }
         }
     }
+    pub fn save_table_as_gzip(prefix: String) {
+        let output_file = File::create(format!("{prefix}.tar.gz")).unwrap();
+        let encoder = GzEncoder::new(BufWriter::new(output_file), Compression::default());
+        let mut tar = Builder::new(encoder);
+        let mut header = Header::new_gnu();
+        if let Ok(client) = redis::Client::open("redis://127.0.0.1/") {
+            if let Ok(mut con) = client.get_connection() {
+                let files: Vec<String> = con.keys(format!("{prefix}/*")).unwrap();
+                files.iter().for_each(|file| {
+                    let contents = get(PathBuf::from(file)).unwrap();
+                    let contents = contents.as_bytes();
+                    header.set_size(contents.len() as u64);
+                    header.set_mode(0o644);
+                    header.set_cksum();
+                    tar.append_data(&mut header, file, contents).unwrap();
+                });
+            }
+        }
+    }
+
 
 }
 
@@ -130,6 +153,6 @@ mod tests {
 
 #[allow(dead_code)]
 fn main() {
-    persistence::save_table_as_files("safe".to_string());
-    persistence::save_table_as_files("unsafe".to_string());
+    persistence::save_table_as_gzip("safe".to_string());
+    persistence::save_table_as_gzip("unsafe".to_string());
 }
