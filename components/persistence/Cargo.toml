@@ -3,6 +3,10 @@ name = "persistence"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "save"
+path = "src/lib.rs"
+
 [lib]
 path = "src/lib.rs"
 
@@ -13,7 +17,7 @@ tokio = { version = "1.5", features = ["full"], optional = true }
 futures = { version = "0.3", optional = true}
 
 [features]
-#default=["redis"]
-default=["tikv"]
+#default=["tikv"]
+default=["redis"]
 redis=["dep:redis"]
 tikv=["dep:tikv-client", "dep:tokio", "dep:futures"]
