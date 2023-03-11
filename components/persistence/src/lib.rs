@@ -27,6 +27,13 @@ pub mod persistence {
         let v: String = con.get::<String, _>(key)?;
         Ok(v)
     }
+    pub fn get_raw(key: PathBuf) -> redis::RedisResult<String> {
+        let key = format!("{}", key.as_path().display());
+        let client = redis::Client::open("redis://127.0.0.1/")?;
+        let mut con = client.get_connection()?;
+        let v: String = con.get::<String, _>(key)?;
+        Ok(v)
+    }
     pub fn put(key: PathBuf, value: &str) -> redis::RedisResult<()> {
         let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
         let key = format!("{namespace}{}", key.as_path().display());
@@ -55,35 +62,37 @@ pub mod persistence {
             }
         }
     }
-    pub fn save_table_as_gzip(prefix: String) {
+    pub fn save_tables_as_gzip(tables: Vec<&str>) {
         let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
-        let prefix = format!("{namespace}{prefix}");
-        let output_file = File::create(format!("{prefix}.tar.gz")).unwrap();
+        let output_file = File::create(format!("{namespace}.tar.gz")).unwrap();
         let encoder = GzEncoder::new(BufWriter::new(output_file), Compression::default());
         let mut tar = Builder::new(encoder);
         let mut header = Header::new_gnu();
-        if let Ok(client) = redis::Client::open("redis://127.0.0.1/") {
-            if let Ok(mut con) = client.get_connection() {
-                let files: Vec<String> = con.keys(format!("{prefix}/*")).unwrap();
-                let pb = ProgressBar::new(files.len() as u64);
-                pb.set_style(
-                    ProgressStyle::default_bar()
-                        .template("{bar:40.cyan/blue} {percent}%")
-                        .progress_chars("##-"),
-                );
-                let mut i = 0;
-                files.iter().for_each(|file| {
-                    if let Ok(contents) = get(PathBuf::from(file)) {
-                        let contents = contents.as_bytes();
-                        header.set_size(contents.len() as u64);
-                        header.set_mode(0o644);
-                        header.set_cksum();
-                        tar.append_data(&mut header, file, contents).unwrap();
-                    }
-                    pb.set_position(i);
-                    i = i + 1;
-                });
-                pb.finish();
+        for table in tables {
+            let prefix = format!("{namespace}{table}");
+            if let Ok(client) = redis::Client::open("redis://127.0.0.1/") {
+                if let Ok(mut con) = client.get_connection() {
+                    let files: Vec<String> = con.keys(format!("{prefix}/*")).unwrap();
+                    let pb = ProgressBar::new(files.len() as u64);
+                    pb.set_style(
+                        ProgressStyle::default_bar()
+                            .template("{bar:40.cyan/blue} {percent}%")
+                            .progress_chars("##-"),
+                    );
+                    let mut i = 0;
+                    files.iter().for_each(|file| {
+                        if let Ok(contents) = get_raw(PathBuf::from(file)) {
+                            let contents = contents.as_bytes();
+                            header.set_size(contents.len() as u64);
+                            header.set_mode(0o644);
+                            header.set_cksum();
+                            tar.append_data(&mut header, file, contents).unwrap();
+                        }
+                        pb.set_position(i);
+                        i = i + 1;
+                    });
+                    pb.finish();
+                }
             }
         }
     }
@@ -168,6 +177,5 @@ mod tests {
 
 #[allow(dead_code)]
 fn main() {
-    persistence::save_table_as_gzip("safe".to_string());
-    persistence::save_table_as_gzip("unsafe".to_string());
+    persistence::save_tables_as_gzip(vec!["safe", "unsafe"]);
 }
