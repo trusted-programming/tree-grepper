@@ -16,7 +16,7 @@ pub mod persistence {
     use flate2::Compression;
     use flate2::write::GzEncoder;
     use redis::Commands;
-    use tar::{Builder, Header, EntryType};
+    use tar::{Builder, Header};
     pub fn get(key: PathBuf) -> redis::RedisResult<String> {
         let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
         let key = format!("{namespace}{}", key.as_path().display());
@@ -54,6 +54,8 @@ pub mod persistence {
         }
     }
     pub fn save_table_as_gzip(prefix: String) {
+        let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
+        let prefix = format!("{namespace}{prefix}");
         let output_file = File::create(format!("{prefix}.tar.gz")).unwrap();
         let encoder = GzEncoder::new(BufWriter::new(output_file), Compression::default());
         let mut tar = Builder::new(encoder);
@@ -62,12 +64,13 @@ pub mod persistence {
             if let Ok(mut con) = client.get_connection() {
                 let files: Vec<String> = con.keys(format!("{prefix}/*")).unwrap();
                 files.iter().for_each(|file| {
-                    let contents = get(PathBuf::from(file)).unwrap();
-                    let contents = contents.as_bytes();
-                    header.set_size(contents.len() as u64);
-                    header.set_mode(0o644);
-                    header.set_cksum();
-                    tar.append_data(&mut header, file, contents).unwrap();
+                    if let Ok(contents) = get(PathBuf::from(file)) {
+                        let contents = contents.as_bytes();
+                        header.set_size(contents.len() as u64);
+                        header.set_mode(0o644);
+                        header.set_cksum();
+                        tar.append_data(&mut header, file, contents).unwrap();
+                    }
                 });
             }
         }
