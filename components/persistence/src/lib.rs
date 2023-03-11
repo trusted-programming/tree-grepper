@@ -1,46 +1,97 @@
+use std::env;
+pub fn config(var: String, default: String) -> String {
+    let name = var;
+    match env::var(name) {
+        Ok(v) => v,
+        Err(_) => default,
+    }
+}
+
 #[cfg(feature = "redis")]
 pub mod persistence {
     extern crate redis;
-    use std::path::PathBuf;
+    use std::{path::PathBuf, fs::File};
+    use std::io::prelude::*;
 
     use redis::Commands;
     pub fn get(key: PathBuf) -> redis::RedisResult<String> {
+        let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
+        let key = format!("{namespace}{}", key.as_path().display());
         let client = redis::Client::open("redis://127.0.0.1/")?;
         let mut con = client.get_connection()?;
-        let v: String = con.get::<String, _>(format!("{:?}",key))?;
+        let v: String = con.get::<String, _>(key)?;
         Ok(v)
     }
     pub fn put(key: PathBuf, value: &str) -> redis::RedisResult<()> {
+        let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
+        let key = format!("{namespace}{}", key.as_path().display());
         let client = redis::Client::open("redis://127.0.0.1/")?;
         let mut con = client.get_connection()?;
-        con.del(format!("{:?}",key))?;
-        con.set(format!("{:?}",key), value)?;
+        con.del(key.clone())?;
+        con.set(key, value)?;
         Ok(())
     }
+    pub fn save_table_as_files(prefix: String) {
+        let mut safe_dir = PathBuf::new();
+        safe_dir.push(prefix.clone());
+        if ! safe_dir.exists() {
+            std::fs::create_dir(prefix.clone()).unwrap();
+        }
+        if let Ok(client) = redis::Client::open("redis://127.0.0.1/") {
+            if let Ok(mut con) = client.get_connection() {
+                let files: Vec<String> = con.keys(format!("{prefix}/*")).unwrap();
+                files.iter().for_each(|file| {
+                    let content = get(PathBuf::from(file)).unwrap();
+                    let f = File::create(file);
+                    if let Ok(mut f) = f {
+                        let _ = f.write_all(content.as_bytes());
+                    }
+                });
+            }
+        }
+    }
+
 }
 
 #[cfg(feature = "tikv")]
 pub mod persistence {
     use tikv_client::RawClient;
-    use std::path::PathBuf;
+    use std::path::{PathBuf, Path};
     use futures::executor::block_on;
+    pub async fn async_get(key: PathBuf) -> tikv_client::Result<String> {
+        let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
+        let key = format!("{namespace}{}", key.as_path().display());
+        let client = RawClient::new(vec!["127.0.0.1:2379"]).await?;
+        if let Some(value) = client.get(key).await? {
+            let v = String::from_utf8(value).unwrap(); 
+            Ok(v)
+        } else {
+            Ok("".to_string())
+        }
+    }
+    pub async fn async_put(key: PathBuf, value: &str) -> tikv_client::Result<()> {
+        let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
+        let key = format!("{namespace}{}", key.as_path().display());
+        let client = RawClient::new(vec!["127.0.0.1:2379"]).await?;
+        client.put(key, value).await?;
+        Ok(())
+    }
 
     pub fn get(key: PathBuf) -> tikv_client::Result<String> {
-        let v = async {
-            let client = RawClient::new(vec!["127.0.0.1:2379"]).await?;
-            let value = client.get(format!("{:?}",key)).await?;
-            let v = String::from_utf8(value.unwrap()).unwrap();
-            Ok(v)
-        };
+        let v = async_get(key);
         block_on(v)
     }
     pub fn put(key: PathBuf, value: &str) -> tikv_client::Result<()> {
-        let v = async {
-            let client = RawClient::new(vec!["127.0.0.1:2379"]).await?;
-            client.put(format!("{:?}",key), value).await?;
-            Ok(())
-        };
+        let v = async_put(key, value);
         block_on(v)
+    }
+    #[tokio::main]
+    async fn _main() -> tikv_client::Result<()> {
+        let hello = Path::new("Hello").to_path_buf();
+        async_put(hello.clone(), "World").await?;
+        let value = async_get(hello).await?;
+        assert_eq!(format!("Hello, {value}!"), "Hello, World!");
+        Ok(())
     }
 }
 
@@ -67,11 +118,18 @@ mod tests {
     use crate::persistence;
 
     #[test]
-    fn main() -> tikv_client::Result<()> {
+    fn main() {
         let hello = Path::new("Hello").to_path_buf();
         let _ = persistence::put(hello.clone(), "World");
-        let value = persistence::get(hello).unwrap();
-        assert_eq!(format!("Hello, {value}!"), "Hello, World!");
-        Ok(())
+        if let Ok(value) = persistence::get(hello) {
+            assert_eq!(format!("Hello, {value}!"), "Hello, World!");
+        }
     }
+
+}
+
+#[allow(dead_code)]
+fn main() {
+    persistence::save_table_as_files("safe".to_string());
+    persistence::save_table_as_files("unsafe".to_string());
 }

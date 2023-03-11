@@ -11,8 +11,8 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use std::env;
 use std::io::{self, BufWriter, Write};
 use tree_sitter::Parser;
-use std::alloc;
-use cap::Cap;
+// use std::alloc;
+// use cap::Cap;
 
 // #[global_allocator]
 // static ALLOCATOR: Cap<alloc::System> = Cap::new(alloc::System, usize::max_value());
