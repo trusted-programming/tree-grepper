@@ -14,11 +14,11 @@ use tree_sitter::Parser;
 use std::alloc;
 use cap::Cap;
 
-#[global_allocator]
-static ALLOCATOR: Cap<alloc::System> = Cap::new(alloc::System, usize::max_value());
+// #[global_allocator]
+// static ALLOCATOR: Cap<alloc::System> = Cap::new(alloc::System, usize::max_value());
 
 fn main() {
-    ALLOCATOR.set_limit(30 * 1024 * 1024).unwrap();
+//     ALLOCATOR.set_limit(30 * 1024 * 1024).unwrap();
     
     let mut buffer = BufWriter::new(io::stdout());
 
