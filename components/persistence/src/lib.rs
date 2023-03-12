@@ -21,15 +21,17 @@ pub mod persistence {
 
     pub fn get(key: PathBuf) -> redis::RedisResult<String> {
         let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
+        let host = crate::config("HOST".to_string(), "127.0.0.1".to_string());
         let key = format!("{namespace}{}", key.as_path().display());
-        let client = redis::Client::open("redis://127.0.0.1/")?;
+        let client = redis::Client::open(format!("redis://${host}/"))?;
         let mut con = client.get_connection()?;
         let v: String = con.get::<String, _>(key)?;
         Ok(v)
     }
     pub fn get_raw(key: PathBuf) -> redis::RedisResult<String> {
         let key = format!("{}", key.as_path().display());
-        let client = redis::Client::open("redis://127.0.0.1/")?;
+        let host = crate::config("HOST".to_string(), "127.0.0.1".to_string());
+        let client = redis::Client::open(format!("redis://${host}/"))?;
         let mut con = client.get_connection()?;
         let v: String = con.get::<String, _>(key)?;
         Ok(v)
@@ -37,7 +39,8 @@ pub mod persistence {
     pub fn put(key: PathBuf, value: &str) -> redis::RedisResult<()> {
         let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
         let key = format!("{namespace}{}", key.as_path().display());
-        let client = redis::Client::open("redis://127.0.0.1/")?;
+        let host = crate::config("HOST".to_string(), "127.0.0.1".to_string());
+        let client = redis::Client::open(format!("redis://${host}/"))?;
         let mut con = client.get_connection()?;
         con.del(key.clone())?;
         con.set(key, value)?;
@@ -49,7 +52,8 @@ pub mod persistence {
         if ! safe_dir.exists() {
             std::fs::create_dir(prefix.clone()).unwrap();
         }
-        if let Ok(client) = redis::Client::open("redis://127.0.0.1/") {
+        let host = crate::config("HOST".to_string(), "127.0.0.1".to_string());
+        if let Ok(client) = redis::Client::open(format!("redis://${host}/")) {
             if let Ok(mut con) = client.get_connection() {
                 let files: Vec<String> = con.keys(format!("{prefix}/*")).unwrap();
                 files.iter().for_each(|file| {
@@ -68,9 +72,10 @@ pub mod persistence {
         let encoder = GzEncoder::new(BufWriter::new(output_file), Compression::default());
         let mut tar = Builder::new(encoder);
         let mut header = Header::new_gnu();
+        let host = crate::config("HOST".to_string(), "127.0.0.1".to_string());
         for table in tables {
             let prefix = format!("{namespace}{table}");
-            if let Ok(client) = redis::Client::open("redis://127.0.0.1/") {
+            if let Ok(client) = redis::Client::open(format!("redis://${host}/")) {
                 if let Ok(mut con) = client.get_connection() {
                     let files: Vec<String> = con.keys(format!("{prefix}/*")).unwrap();
                     let pb = ProgressBar::new(files.len() as u64);
