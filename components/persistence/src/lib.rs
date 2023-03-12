@@ -10,20 +10,20 @@ pub fn config(var: String, default: String) -> String {
 #[cfg(feature = "redis")]
 pub mod persistence {
     extern crate redis;
-    use std::{path::PathBuf, fs::File};
     use std::io::{prelude::*, BufWriter};
+    use std::{fs::File, path::PathBuf};
 
-    use flate2::Compression;
     use flate2::write::GzEncoder;
+    use flate2::Compression;
+    use indicatif::{ProgressBar, ProgressStyle};
     use redis::Commands;
     use tar::{Builder, Header};
-    use indicatif::{ProgressBar, ProgressStyle};
 
     pub fn get(key: PathBuf) -> redis::RedisResult<String> {
         let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
         let host = crate::config("HOST".to_string(), "127.0.0.1".to_string());
         let key = format!("{namespace}{}", key.as_path().display());
-        let client = redis::Client::open(format!("redis://${host}/"))?;
+        let client = redis::Client::open(format!("redis://{host}:6379/"))?;
         let mut con = client.get_connection()?;
         let v: String = con.get::<String, _>(key)?;
         Ok(v)
@@ -31,7 +31,7 @@ pub mod persistence {
     pub fn get_raw(key: PathBuf) -> redis::RedisResult<String> {
         let key = format!("{}", key.as_path().display());
         let host = crate::config("HOST".to_string(), "127.0.0.1".to_string());
-        let client = redis::Client::open(format!("redis://${host}/"))?;
+        let client = redis::Client::open(format!("redis://{host}:6379/"))?;
         let mut con = client.get_connection()?;
         let v: String = con.get::<String, _>(key)?;
         Ok(v)
@@ -40,7 +40,7 @@ pub mod persistence {
         let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
         let key = format!("{namespace}{}", key.as_path().display());
         let host = crate::config("HOST".to_string(), "127.0.0.1".to_string());
-        let client = redis::Client::open(format!("redis://${host}/"))?;
+        let client = redis::Client::open(format!("redis://{host}:6379/"))?;
         let mut con = client.get_connection()?;
         con.del(key.clone())?;
         con.set(key, value)?;
@@ -49,11 +49,11 @@ pub mod persistence {
     pub fn save_table_as_files(prefix: String) {
         let mut safe_dir = PathBuf::new();
         safe_dir.push(prefix.clone());
-        if ! safe_dir.exists() {
+        if !safe_dir.exists() {
             std::fs::create_dir(prefix.clone()).unwrap();
         }
         let host = crate::config("HOST".to_string(), "127.0.0.1".to_string());
-        if let Ok(client) = redis::Client::open(format!("redis://${host}/")) {
+        if let Ok(client) = redis::Client::open(format!("redis://{host}:6379/")) {
             if let Ok(mut con) = client.get_connection() {
                 let files: Vec<String> = con.keys(format!("{prefix}/*")).unwrap();
                 files.iter().for_each(|file| {
@@ -73,49 +73,54 @@ pub mod persistence {
         let mut tar = Builder::new(encoder);
         let mut header = Header::new_gnu();
         let host = crate::config("HOST".to_string(), "127.0.0.1".to_string());
-        for table in tables {
-            let prefix = format!("{namespace}{table}");
-            if let Ok(client) = redis::Client::open(format!("redis://${host}/")) {
-                if let Ok(mut con) = client.get_connection() {
-                    let files: Vec<String> = con.keys(format!("{prefix}/*")).unwrap();
-                    let pb = ProgressBar::new(files.len() as u64);
-                    pb.set_style(
-                        ProgressStyle::default_bar()
-                            .template("{bar:40.cyan/blue} {percent}%")
-                            .progress_chars("##-"),
-                    );
-                    let mut i = 0;
-                    files.iter().for_each(|file| {
-                        if let Ok(contents) = get_raw(PathBuf::from(file)) {
-                            let contents = contents.as_bytes();
-                            header.set_size(contents.len() as u64);
-                            header.set_mode(0o644);
-                            header.set_cksum();
-                            tar.append_data(&mut header, file, contents).unwrap();
-                        }
-                        pb.set_position(i);
-                        i = i + 1;
-                    });
-                    pb.finish();
+        if let Ok(client) = redis::Client::open(format!("redis://{host}:6379/")) {
+            for table in tables {
+                let prefix = format!("{namespace}{table}");
+                match client.get_connection() {
+                    Ok(mut con) => {
+                        let files: Vec<String> = con.keys(format!("{prefix}/*")).unwrap();
+                        let pb = ProgressBar::new(files.len() as u64);
+                        pb.set_style(
+                            ProgressStyle::default_bar()
+                                .template("{bar:40.cyan/blue} {percent}%")
+                                .progress_chars("##-"),
+                        );
+                        let mut i = 0;
+                        files.iter().for_each(|file| {
+                            if let Ok(contents) = get_raw(PathBuf::from(file)) {
+                                let contents = contents.as_bytes();
+                                header.set_size(contents.len() as u64);
+                                header.set_mode(0o644);
+                                header.set_cksum();
+                                tar.append_data(&mut header, file, contents).unwrap();
+                            }
+                            pb.set_position(i);
+                            i = i + 1;
+                        });
+                        pb.finish();
+                    }
+                    Err(e) => {
+                        println!("Cannot make the connection {e}");
+                    }
                 }
             }
+        } else {
+            println!("Cannot connect to {host}");
         }
     }
-
-
 }
 
 #[cfg(feature = "tikv")]
 pub mod persistence {
-    use tikv_client::RawClient;
-    use std::path::{PathBuf, Path};
     use futures::executor::block_on;
+    use std::path::{Path, PathBuf};
+    use tikv_client::RawClient;
     pub async fn async_get(key: PathBuf) -> tikv_client::Result<String> {
         let namespace = crate::config("NAMESPACE".to_string(), "".to_string());
         let key = format!("{namespace}{}", key.as_path().display());
         let client = RawClient::new(vec!["127.0.0.1:2379"]).await?;
         if let Some(value) = client.get(key).await? {
-            let v = String::from_utf8(value).unwrap(); 
+            let v = String::from_utf8(value).unwrap();
             Ok(v)
         } else {
             Ok("".to_string())
@@ -150,24 +155,24 @@ pub mod persistence {
 #[cfg(not(feature = "tikv"))]
 #[cfg(not(feature = "redis"))]
 pub mod persistence {
-    use std::{result::Result, io::Error, path::PathBuf, fs::read_to_string};
+    use std::{fs::read_to_string, io::Error, path::PathBuf, result::Result};
     pub fn get(key: PathBuf) -> Result<String, Error> {
         read_to_string(key)
     }
     pub fn put(key: PathBuf, value: &str) -> Result<(), Error> {
-            if let Some(p) = key.parent() {
-                if p.to_str().unwrap() != "" && ! p.exists() {
-                    std::fs::create_dir(p)?;
-                }
+        if let Some(p) = key.parent() {
+            if p.to_str().unwrap() != "" && !p.exists() {
+                std::fs::create_dir(p)?;
             }
-            std::fs::write(&key, value)
+        }
+        std::fs::write(&key, value)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
     use crate::persistence;
+    use std::path::Path;
 
     #[test]
     fn main() {
@@ -177,7 +182,6 @@ mod tests {
             assert_eq!(format!("Hello, {value}!"), "Hello, World!");
         }
     }
-
 }
 
 #[allow(dead_code)]
